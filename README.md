@@ -1,2 +1,3 @@
-# aurxy
-Http proxy server base on Aurora
+Aurxy
+======
+Http filter and proxy server
