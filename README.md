@@ -1,3 +1,4 @@
 Aurxy
 ======
-Http filter and proxy server
+
+Http proxy server with filter.
