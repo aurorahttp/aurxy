@@ -1,0 +1,122 @@
+#!/usr/bin/env php
+<?php
+/*
+ * Aurxy
+ */
+
+require __DIR__ . '/vendor/autoload.php';
+
+$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+socket_set_nonblock($socket);
+socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
+socket_bind($socket, '127.0.0.1', 10086);
+socket_listen($socket);
+
+$socketEv = new EvIo($socket, Ev::READ, function () use ($socket) {
+    $client = socket_accept($socket);
+    socket_getpeername($client, $address, $port);
+    echo "Connection created from $address::$port.\n";
+    $clientEv = new EvIo($client, Ev::READ, function ($watcher) use ($client) {
+        /** @var EvIo $watcher */
+        $watcher->stop();
+        $content = '';
+        $headerEndPos = false;
+        while ($part = socket_read($client, 1024)) {
+            if ($headerEndPos === false) {
+                if (false !== ($pos = strpos($part, "\r\n\r\n"))) {
+                    $headerEndPos = $pos;
+                }
+            }
+
+            $content .= $part;
+        }
+        $headerRawContent = $headerEndPos ? substr($content, 0, $headerEndPos) : $content;
+        $headerRowLines = explode("\r\n", $headerRawContent);
+        $firstLine = $headerRowLines[0];
+        list($method, $uri, $version) = explode(' ', $firstLine);
+        $header = [];
+
+        foreach (array_slice($headerRowLines, 1) as $headerRow) {
+            list($field, $value) = explode(":", $headerRow);
+            $header[$field] = $value;
+        }
+
+        $uriParams = parse_url($uri);
+        $queryParams = [];
+        $path = isset($uriParams['path']) ? $uriParams['path'] : '/';
+        if (isset($uriParams['query'])) {
+            parse_str($uriParams['query'], $queryParams);
+        }
+
+//        var_dump($uriParams, $queryParams);
+//        var_dump($firstLine, $header);
+
+        if ( ! empty($queryParams['url'])) { // Test mode
+            echo "Transmit Request: {$queryParams['url']}\n";
+            $guzzle = new \GuzzleHttp\Client();
+            $response = $guzzle->request('GET', $queryParams['url']);
+            socket_write($client, 'HTTP/' . implode(' ', [
+                    $response->getProtocolVersion(),
+                    $response->getStatusCode(),
+                    $response->getReasonPhrase(),
+                ]) . "\r\n");
+            foreach (array_keys($response->getHeaders()) as $key) {
+                socket_write($client, $response->getHeaderLine($key) . "\r\n");
+            }
+            socket_write($client, "\r\n" . $response->getBody()->getContents());
+        } else { // Proxy mode
+            $host = isset($headerRowLines['Host']) ? trim($headerRowLines['Host']) :  '';
+            echo "Transmit Request: {$host}{$uri} ... ";
+            $guzzle = new \GuzzleHttp\Client();
+            $response = $guzzle->request('GET', $host . $uri);
+            echo "done\n";
+
+            socket_write($client, 'HTTP/' . implode(' ', [
+                    $response->getProtocolVersion(),
+                    $response->getStatusCode(),
+                    $response->getReasonPhrase(),
+                ]) . "\r\n");
+            foreach (array_keys($response->getHeaders()) as $key) {
+                socket_write($client, $response->getHeaderLine($key) . "\r\n");
+            }
+            socket_write($client, "\r\n" . $response->getBody()->getContents());
+        }
+
+
+        socket_close($client);
+    });
+
+    Ev::run();
+});
+
+$signalEv = new EvSignal(SIGKILL, function ($watcher) {
+    /** @var EvSignal $watcher */
+    echo "Kill me(kill)!\n";
+    $watcher->stop();
+    exit(0);
+});
+
+$signalEv = new EvSignal(SIGTERM, function ($watcher) use ($socket) {
+    /** @var EvSignal $watcher */
+    echo "Kill me(term)!\n";
+    $watcher->stop();
+    socket_close($socket);
+
+    exit(0);
+});
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline) use ($socket) {
+    echo "$errno: $errstr in $errfile on line $errline\n";
+    socket_close($socket);
+    exit(0);
+});
+
+$fileWatcher = new EvStat(__FILE__, 5.0, function ($watcher) use ($socket) {
+    echo "Script changed!\n";
+//    socket_close($socket);
+//    echo "Socket close!\n";
+//    system('php ' . __FILE__ . ' &');
+//    exit(0);
+});
+
+Ev::run();
