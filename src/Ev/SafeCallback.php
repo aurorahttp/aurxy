@@ -27,13 +27,15 @@ class SafeCallback
         try {
             call_user_func_array($this->callback, func_get_args());
         } catch (\Throwable $exception) {
-            die(sprintf("Error class %s #%d \"%s\" in %s at %d line",
+            echo sprintf("\n%s #%d \"%s\" in %s at at line %d\n",
                 get_class($exception),
                 $exception->getCode(),
                 $exception->getMessage(),
                 $exception->getFile(),
                 $exception->getLine()
-            ));
+            );
+            echo $exception->getTraceAsString();
+            die(1);
         }
     }
 }
