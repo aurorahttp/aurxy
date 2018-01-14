@@ -12,10 +12,30 @@ socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
 socket_bind($socket, '127.0.0.1', 10085);
 socket_listen($socket);
 
-$socketEv = new EvIo($socket, Ev::READ, function () use ($socket) {
-    $client = socket_accept($socket);
-    $connection = new \Panlatent\Aurxy\Connection($client);
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline) use ($socket) {
+    echo "$errno: $errstr in $errfile on line $errline\n";
+    socket_close($socket);
+    exit(0);
 });
+
+set_exception_handler(function (\Throwable $exception) use ($socket){
+    echo "{$exception->getMessage()}\n";
+    socket_close($socket);
+    exit(0);
+});
+
+
+$socketEv = new EvIo($socket, Ev::READ, function (EvIo $watcher) use ($socket) {
+    try {
+        $client = socket_accept($socket);
+        $connection = new \Panlatent\Aurxy\Connection($client);
+        $connection->handle();
+    } catch (\Throwable $e) {
+        echo $e->getMessage();
+    }
+});
+
 
 $signalEv = new EvSignal(SIGKILL, function ($watcher) {
     /** @var EvSignal $watcher */
@@ -33,11 +53,7 @@ $signalEv = new EvSignal(SIGTERM, function ($watcher) use ($socket) {
     exit(0);
 });
 
-set_error_handler(function ($errno, $errstr, $errfile, $errline) use ($socket) {
-    echo "$errno: $errstr in $errfile on line $errline\n";
-    socket_close($socket);
-    exit(0);
-});
+
 
 $fileWatcher = new EvStat(__FILE__, 5.0, function ($watcher) use ($socket) {
     /** @var EvStat $watcher */
@@ -62,4 +78,4 @@ $fileWatcher = new EvStat(__FILE__, 5.0, function ($watcher) use ($socket) {
 //    exit(0);
 });
 
-Ev::run();
+Ev::run(Ev::FLAG_AUTO);
