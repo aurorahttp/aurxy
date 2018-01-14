@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Panlatent\Aurxy;
 
 use Interop\Http\Server\MiddlewareInterface;
@@ -22,11 +21,11 @@ class Transaction
      */
     protected $responseHandle;
     /**
-     * @var MiddlewareInterface[]
+     * @var MiddlewareInterface[]|SplPriorityQueue
      */
     protected $middlewares;
     /**
-     * @var FilterInterface[]
+     * @var FilterInterface[]|SplPriorityQueue
      */
     protected $filters;
 
@@ -46,19 +45,74 @@ class Transaction
 
     /**
      * @param ServerRequestInterface $request
+     * @param ResponseInterface|null $response
      * @return ResponseInterface
      */
-    public function handle(ServerRequestInterface $request)
+    public function handle(ServerRequestInterface $request, ResponseInterface $response = null)
     {
-        $response = $this->requestHandle->handle($request);
+        if ($response === null) {
+            $response = $this->applyMiddlewares($request);
+        }
+        $response = $this->applyFilters($response);
+
+        return $response;
+    }
+
+    /**
+     * @return RequestHandlerInterface
+     */
+    public function getRequestHandle(): RequestHandlerInterface
+    {
+        return $this->requestHandle;
+    }
+
+    /**
+     * @return ResponseHandlerInterface
+     */
+    public function getResponseHandle(): ResponseHandlerInterface
+    {
+        return $this->responseHandle;
+    }
+
+    /**
+     * @return MiddlewareInterface[]|SplPriorityQueue
+     */
+    public function getMiddlewares()
+    {
+        return $this->middlewares;
+    }
+
+    /**
+     * @return FilterInterface[]|SplPriorityQueue
+     */
+    public function getFilters()
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     */
+    protected function applyMiddlewares(ServerRequestInterface $request)
+    {
         foreach ($this->middlewares as $middleware) {
             $response = $middleware->process($request, $this->requestHandle);
         }
 
+        return $response ?? $this->requestHandle->handle($request);
+    }
+
+    /**
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    protected function applyFilters(ResponseInterface $response)
+    {
         foreach ($this->filters as $filter) {
             $response = $filter->process($response, $this->responseHandle);
         }
 
-        return $this->responseHandle->handle($response);
+        return $response ?? $this->responseHandle->handle($response);
     }
 }

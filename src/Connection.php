@@ -198,7 +198,6 @@ class Connection
 
             return;
         }
-
         $this->transaction();
     }
 
