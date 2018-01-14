@@ -6,6 +6,7 @@ use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Stream;
 use Panlatent\Http\Message\HeaderStore;
 use Panlatent\Http\Message\Request;
+use Panlatent\Http\Message\ServerRequest;
 use Panlatent\Http\Message\Uri;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
@@ -38,6 +39,17 @@ class RequestFactory
     public function createRequest()
     {
         $request = new Request($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->method,
+            $this->getUri());
+
+        return $request;
+    }
+
+    /**
+     * @return ServerRequest
+     */
+    public function createServerRequest()
+    {
+        $request = new ServerRequest($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->method,
             $this->getUri());
 
         return $request;

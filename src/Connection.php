@@ -2,8 +2,6 @@
 
 namespace Panlatent\Aurxy;
 
-use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\TransferException;
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
 use Psr\Http\Message\ResponseInterface;
@@ -195,13 +193,13 @@ class Connection
              */
             if ($this->requestFactory->headers->getLine('Content-Length') == 0) {
                 $this->messageStatus = static::MSG_BODY_DONE;
-                $this->transmit();
+                $this->transaction();
             }
 
             return;
         }
 
-        $this->transmit();
+        $this->transaction();
     }
 
     /**
@@ -209,29 +207,17 @@ class Connection
      */
     public function afterRequestBody()
     {
-        $this->transmit();
+        $this->transaction();
     }
 
     /**
-     * Transmit client request to target server.
+     * Run a HTTP transaction.
      */
-    public function transmit()
+    public function transaction()
     {
-        $request = $this->requestFactory->createRequest();
-
-        $options = [
-            'timeout'         => 30.0,
-            'connect_timeout' => 5.0,
-        ];
-        try {
-            $response = Bridge::send($request, $options);
-            echo "done {$response->getBody()->getSize()} byte.\n";
-        } catch (BadResponseException $exception) {
-            $response = $exception->getResponse();
-        } catch (TransferException $exception) {
-            echo "failed {$exception->getMessage()}\n";
-            $response = (new BadGatewayResponseFactory($request, $exception))->createResponse();
-        }
+        $transaction = new Transaction(new RequestHandler(), new ResponseHandler());
+        $request = $this->requestFactory->createServerRequest();
+        $response = $transaction->handle($request);
         $this->sendResponse($response);
     }
 
