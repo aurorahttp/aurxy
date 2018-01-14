@@ -214,7 +214,7 @@ class Connection
      */
     public function transaction()
     {
-        $transaction = new Transaction(new RequestHandler(), new ResponseHandler());
+        $transaction = new Transaction($this, new RequestHandler(), new ResponseHandler());
         $request = $this->requestFactory->createServerRequest();
         $response = $transaction->handle($request);
         $this->sendResponse($response);

@@ -2,14 +2,25 @@
 
 namespace Panlatent\Aurxy;
 
-use Interop\Http\Server\ResponseHandlerInterface;
 use Panlatent\Http\Server\FilterInterface;
-use Psr\Http\Message\ResponseInterface;
 
 abstract class Filter implements FilterInterface
 {
-    public function process(ResponseInterface $response, ResponseHandlerInterface $handler): ResponseInterface
-    {
+    /**
+     * @var Transaction
+     */
+    protected $transaction;
 
+    public function __construct(Transaction $transaction)
+    {
+        $this->transaction = $transaction;
+    }
+
+    /**
+     * @return Transaction
+     */
+    public function getTransaction(): Transaction
+    {
+        return $this->transaction;
     }
 }

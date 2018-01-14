@@ -13,6 +13,10 @@ use SplPriorityQueue;
 class Transaction
 {
     /**
+     * @var Connection
+     */
+    protected $connection;
+    /**
      * @var RequestHandlerInterface
      */
     protected $requestHandle;
@@ -32,11 +36,16 @@ class Transaction
     /**
      * Transaction constructor.
      *
+     * @param Connection               $connection
      * @param RequestHandlerInterface  $requestHandle
      * @param ResponseHandlerInterface $responseHandle
      */
-    public function __construct(RequestHandlerInterface $requestHandle, ResponseHandlerInterface $responseHandle)
-    {
+    public function __construct(
+        Connection $connection,
+        RequestHandlerInterface $requestHandle,
+        ResponseHandlerInterface $responseHandle
+    ) {
+        $this->connection = $connection;
         $this->requestHandle = $requestHandle;
         $this->responseHandle = $responseHandle;
         $this->middlewares = new SplPriorityQueue();
@@ -56,6 +65,14 @@ class Transaction
         $response = $this->applyFilters($response);
 
         return $response;
+    }
+
+    /**
+     * @return Connection
+     */
+    public function getConnection(): Connection
+    {
+        return $this->connection;
     }
 
     /**
@@ -117,6 +134,6 @@ class Transaction
             }
         }
 
-        return  $response;
+        return $response;
     }
 }
