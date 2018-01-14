@@ -2,12 +2,12 @@
 
 namespace Panlatent\Aurxy;
 
-use Interop\Http\Server\ResponseHandlerInterface;
+use Panlatent\Aurxy\Filter\ResponseFilter;
 use Psr\Http\Message\ResponseInterface;
 
-class ResponseHandler implements ResponseHandlerInterface
+class ResponseFixed extends ResponseFilter
 {
-    public function handle(ResponseInterface $response): ResponseInterface
+    public function process(ResponseInterface $response): ResponseInterface
     {
         if ($response->hasHeader('Transfer-Encoding')) {
             /*

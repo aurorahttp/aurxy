@@ -3,6 +3,7 @@
 namespace Panlatent\Aurxy;
 
 use Panlatent\Aurxy\Ev\SafeCallback;
+use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
 use Psr\Http\Message\ResponseInterface;
 
@@ -214,7 +215,7 @@ class Connection
      */
     public function transaction()
     {
-        $transaction = new Transaction($this, new RequestHandler(), new ResponseHandler());
+        $transaction = new Transaction($this, new RequestHandler(), [new GuzzleBridgeMiddleware()], [new ResponseFixed()]);
         $request = $this->requestFactory->createServerRequest();
         $response = $transaction->handle($request);
         $this->sendResponse($response);

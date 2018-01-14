@@ -4,23 +4,10 @@ namespace Panlatent\Aurxy;
 
 use Panlatent\Http\Server\FilterInterface;
 
-abstract class Filter implements FilterInterface
+abstract class Filter implements FilterInterface, PriorityInterface
 {
-    /**
-     * @var Transaction
-     */
-    protected $transaction;
+    use PriorityTrait;
 
-    public function __construct(Transaction $transaction)
-    {
-        $this->transaction = $transaction;
-    }
-
-    /**
-     * @return Transaction
-     */
-    public function getTransaction(): Transaction
-    {
-        return $this->transaction;
-    }
+    const PRIORITY_MIN = 1;
+    const PRIORITY_MAX = 65535;
 }

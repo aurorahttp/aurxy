@@ -9,12 +9,13 @@
         "symfony/console": "~4.0",
         "symfony/dom-crawler": "~4.0",
         "symfony/css-selector": "~4.0",
+        "symfony/yaml": "^4.0",
         "panlatent/http-exception": "dev-master as 1.0.x-dev",
         "panlatent/http-message": "dev-master as 1.0.x-dev",
-        "panlatent/http-server-filter": "^1.0",
+        "panlatent/http-server-filter": "~1.0.1",
         "http-interop/http-server-middleware": "^1.0",
         "http-interop/http-factory": "^0.3.0",
-        "http-interop/http-server-handler": "^1.1"
+        "http-interop/http-server-handler": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.5"
@@ -38,10 +39,6 @@
         }
     },
     "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/panlatent/http-server-handler"
-        },
         {
             "type": "vcs",
             "url": "https://github.com/panlatent/http-server-filter"
