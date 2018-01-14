@@ -4,6 +4,7 @@ namespace Panlatent\Aurxy;
 
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\ServerException;
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
 use Panlatent\Http\Message\Uri;
@@ -78,14 +79,15 @@ class Connection
                 $this->buffer .= substr($part, 0, $pos);
                 $this->messageStatus = static::MSG_HEAD_DONE;
                 $this->headReady();
-                $this->buffer = substr($part, $pos + 2);
+                $this->buffer = substr($part, $pos + 4);
 
                 return;
             }
         } elseif ($this->messageStatus == static::MSG_BODY_DOING) {
             $length = $this->request->headers['Content-Length'];
-            if ($length == strlen($this->buffer) + strlen($part)) {
+            if ($length <= strlen($this->buffer) + strlen($part)) {
                 $this->buffer .= $part;
+                var_dump($this->buffer);
                 $this->bodyReady();
                 $this->messageStatus = static::MSG_BODY_DONE;
 
@@ -177,8 +179,11 @@ class Connection
             $response = Bridge::request($this->request->method, $uri, $options);
         } catch (ClientException $clientException) {
             $response = $clientException->getResponse();
+        } catch (ServerException $serverException) {
+            $response = $serverException->getResponse();
         } catch (ConnectException $connectException) {
-
+            echo "failed {$connectException->getMessage()}\n";
+            return;
         }
         echo "done {$response->getBody()->getSize()} byte.\n";
 
