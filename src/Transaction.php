@@ -109,10 +109,14 @@ class Transaction
      */
     protected function applyFilters(ResponseInterface $response)
     {
-        foreach ($this->filters as $filter) {
-            $response = $filter->process($response, $this->responseHandle);
+        if ($this->filters->isEmpty()) {
+            $response = $this->responseHandle->handle($response);
+        } else {
+            foreach ($this->filters as $filter) {
+                $response = $filter->process($response, $this->responseHandle);
+            }
         }
 
-        return $response ?? $this->responseHandle->handle($response);
+        return  $response;
     }
 }
