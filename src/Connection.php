@@ -233,14 +233,6 @@ class Connection
                 $response->getReasonPhrase(),
             ]) . "\r\n";
         foreach (array_keys($response->getHeaders()) as $key) {
-            if ($key == 'Transfer-Encoding') {
-                /*
-                 * Transfer-Encoding header need set a size to body first line.
-                 * Now working method not support Transfer-Encoding header.
-                 */
-                echo "=> Skip $key: {$response->getHeaderLine($key)}\n";
-                continue;
-            }
             $buffer .= $key . ': ' . $response->getHeaderLine($key) . "\r\n";
         }
 
