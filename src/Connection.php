@@ -23,6 +23,8 @@ class Connection
 
     protected $messageStatus;
 
+    protected $connectionTimeoutEvent;
+
     protected $socketReadEvent;
 
     protected $socketWriteEvent;
@@ -32,17 +34,18 @@ class Connection
      */
     protected $request;
 
-    protected $contentLength;
-
     public function __construct($socket)
     {
         $this->socket = $socket;
         socket_set_nonblock($socket);
         socket_getpeername($socket, $address, $port);
         echo "\nConnection created from $address::$port :\n";
+    }
 
+    public function handle()
+    {
         $this->messageStatus = static::MSG_FIRST_LINE_WAITING;
-        $this->socketReadEvent = new \EvIo($socket, \Ev::READ, [$this, 'onRead']);
+        $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, [$this, 'onRead']);
     }
 
     public function onRead(\EvIo $watcher)
@@ -123,6 +126,13 @@ class Connection
                 throw new LengthRequiredException();
             }
             $this->messageStatus = static::MSG_BODY_WAITING;
+            /*
+             * If Content-Length is zero, can't read socket.
+             */
+            if ($this->request->headers['Content-Length'] == 0) {
+                $this->messageStatus = static::MSG_BODY_DONE;
+                $this->transmit();
+            }
 
             return;
         }
@@ -150,9 +160,10 @@ class Connection
         }
 
         $options = [
-//            'timeout' => 3,
-//            'connect_timeout' => 2,
-            'headers' => $headers
+            'timeout'         => 3,
+            'connect_timeout' => 2,
+//            'debug'  =>  true,
+            'headers'         => $headers,
         ];
         if ($this->request->method == 'POST') {
             $options['body'] = $this->request->rawBody;
