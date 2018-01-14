@@ -219,15 +219,9 @@ class Connection
     {
         $request = $this->requestFactory->createRequest();
 
-        $headers = [];
-        foreach (array_keys($request->getHeaders()) as $name) {
-            $headers[$name] = $request->getHeaderLine($name);
-        }
-
         $options = [
             'timeout'         => 30.0,
             'connect_timeout' => 5.0,
-//            'header' => $headers,
         ];
         try {
             $response = Bridge::send($request, $options);
