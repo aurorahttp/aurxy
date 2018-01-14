@@ -2,6 +2,9 @@
 
 namespace Panlatent\Aurxy;
 
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
+use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
 use Panlatent\Http\Message\Uri;
 
@@ -45,7 +48,9 @@ class Connection
     public function handle()
     {
         $this->messageStatus = static::MSG_FIRST_LINE_WAITING;
-        $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, [$this, 'onRead']);
+        $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, new SafeCallback(function ($watcher) {
+            $this->onRead($watcher);
+        }));
     }
 
     public function onRead(\EvIo $watcher)
@@ -160,16 +165,21 @@ class Connection
         }
 
         $options = [
-            'timeout'         => 3,
-            'connect_timeout' => 2,
-//            'debug'  =>  true,
+            'timeout'         => 5.0,
+            'connect_timeout' => 5.0,
             'headers'         => $headers,
         ];
         if ($this->request->method == 'POST') {
             $options['body'] = $this->request->rawBody;
         }
 
-        $response = Bridge::request($this->request->method, $uri, $options);
+        try {
+            $response = Bridge::request($this->request->method, $uri, $options);
+        } catch (ClientException $clientException) {
+            $response = $clientException->getResponse();
+        } catch (ConnectException $connectException) {
+
+        }
         echo "done {$response->getBody()->getSize()} byte.\n";
 
         $buffer = 'HTTP/' . implode(' ', [
