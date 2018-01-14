@@ -2,12 +2,11 @@
 
 namespace Panlatent\Aurxy;
 
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\TransferException;
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
-use Panlatent\Http\Message\Uri;
+use Psr\Http\Message\ResponseInterface;
 
 class Connection
 {
@@ -23,20 +22,28 @@ class Connection
 
     protected $buffer;
 
+    protected $writeBodyLength;
+
     protected $message;
 
     protected $messageStatus;
-
+    /**
+     * @var \EvTimer
+     */
     protected $connectionTimeoutEvent;
-
+    /**
+     * @var \EvIo
+     */
     protected $socketReadEvent;
-
+    /**
+     * @var \EvIo
+     */
     protected $socketWriteEvent;
 
     /**
      * @var RequestFactory
      */
-    protected $request;
+    protected $requestFactory;
 
     public function __construct($socket)
     {
@@ -49,12 +56,17 @@ class Connection
     public function handle()
     {
         $this->messageStatus = static::MSG_FIRST_LINE_WAITING;
-        $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, new SafeCallback(function ($watcher) {
-            $this->onRead($watcher);
+        $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, new SafeCallback(function () {
+            $this->onRead();
         }));
     }
 
-    public function onRead(\EvIo $watcher)
+    public function close()
+    {
+
+    }
+
+    public function onRead()
     {
         if ($this->messageStatus == static::MSG_HEAD_WAITING) {
             $this->messageStatus = static::MSG_HEAD_DOING;
@@ -84,59 +96,53 @@ class Connection
                 return;
             }
         } elseif ($this->messageStatus == static::MSG_BODY_DOING) {
-            $length = $this->request->headers['Content-Length'];
-            if ($length <= strlen($this->buffer) + strlen($part)) {
-                $this->buffer .= $part;
-                var_dump($this->buffer);
-                $this->bodyReady();
-                $this->messageStatus = static::MSG_BODY_DONE;
+            if ($this->requestFactory->getBody()->isWritable()) {
+                if ($this->requestFactory->getBody()->write($this->buffer . $part)) {
+                    $this->writeBodyLength += strlen($this->buffer) + strlen($part);
+                    $this->buffer = '';
+                    $length = $this->requestFactory->headers['Content-Length'];
+                    if ($length <= $this->writeBodyLength) {
+                        $this->bodyReady();
+                        $this->messageStatus = static::MSG_BODY_DONE;
+                    }
 
-                return;
+                    return;
+                }
             }
-
         }
         $this->buffer .= $part;
     }
 
     public function firstLineReady()
     {
-        $this->request = new RequestFactory();
-        list($this->request->method, $this->request->uri, $this->request->version) = explode(' ', $this->buffer);
+        list($method, $uri, $version) = explode(' ', $this->buffer);
+        $this->requestFactory = new RequestFactory($method, $uri, $version);
         $this->buffer = '';
     }
 
     public function headReady()
     {
-        $rawHeader = $this->buffer;
-        $rawHeaderLines = explode("\r\n", $rawHeader);
-        foreach ($rawHeaderLines as $headerRow) {
-            list($field, $value) = explode(":", $headerRow);
-            $this->request->headers[$field] = $value;
-        }
+        $this->requestFactory->setHeadersByRawContent($this->buffer);
+        $uri = $this->requestFactory->getUri();
+        echo "=> Request: {$this->requestFactory->getMethod()} {$uri} [{$this->requestFactory->getVersion()}] -> ";
 
-        $uri = new Uri($this->request->uri);
-        if (empty($uri->getHost()) && isset($this->request->headers['Host'])) {
-            $uri = $uri->withHost($this->request->headers['Host']);
-        }
-
-        echo "=> Request: {$this->request->method} {$uri} [{$this->request->version}] -> ";
-        if ($this->request->method == 'CONNECT') {
+        if ($this->requestFactory->getMethod() == 'CONNECT') {
             echo ' Create Tunnel -> ';
-            $tunnel = new Tunnel($uri->getHost(), $uri->getPort());
+//            $tunnel = new Tunnel($uri->getHost(), $uri->getPort());
             $this->socketReadEvent->stop();
             socket_close($this->socket);
             echo " No Support\n";
 
             return;
-        } elseif ($this->request->method == 'POST') {
-            if (! isset($this->request->headers['Content-Length'])) {
+        } elseif ($this->requestFactory->getMethod() == 'POST') {
+            if (! $this->requestFactory->headers->has('Content-Length')) {
                 throw new LengthRequiredException();
             }
             $this->messageStatus = static::MSG_BODY_WAITING;
             /*
              * If Content-Length is zero, can't read socket.
              */
-            if ($this->request->headers['Content-Length'] == 0) {
+            if ($this->requestFactory->headers->getLine('Content-Length') == 0) {
                 $this->messageStatus = static::MSG_BODY_DONE;
                 $this->transmit();
             }
@@ -149,44 +155,37 @@ class Connection
 
     public function bodyReady()
     {
-        $this->request->rawBody = $this->buffer;
-        $this->buffer = '';
         $this->transmit();
     }
 
     public function transmit()
     {
-        $uri = new Uri($this->request->uri);
-        if (empty($uri->getHost()) && isset($this->request->headers['Host'])) {
-            $uri = $uri->withHost($this->request->headers['Host']);
-        }
-
-        $headers = $this->request->headers;
-        if (isset($headers['Connection'])) {
-            $headers['Connection'] = 'close';
-        }
-
+        $request = $this->requestFactory->createServerRequest();
         $options = [
             'timeout'         => 5.0,
             'connect_timeout' => 5.0,
-            'headers'         => $headers,
+            'headers'         => $request->getHeaders(),
         ];
-        if ($this->request->method == 'POST') {
-            $options['body'] = $this->request->rawBody;
-        }
 
         try {
-            $response = Bridge::request($this->request->method, $uri, $options);
-        } catch (ClientException $clientException) {
-            $response = $clientException->getResponse();
-        } catch (ServerException $serverException) {
-            $response = $serverException->getResponse();
-        } catch (ConnectException $connectException) {
-            echo "failed {$connectException->getMessage()}\n";
-            return;
+            $response = Bridge::send($request, $options);
+            echo "done {$response->getBody()->getSize()} byte.\n";
+        } catch (BadResponseException $exception) {
+            $response = $exception->getResponse();
+        } catch (TransferException $exception) {
+            echo "failed {$exception->getMessage()}\n";
+            $response = (new BadGatewayResponseFactory($request, $exception))->createResponse();
         }
-        echo "done {$response->getBody()->getSize()} byte.\n";
+        $this->sendResponse($response);
+    }
 
+    /**
+     * Send a response to client socket.
+     *
+     * @param ResponseInterface $response
+     */
+    public function sendResponse(ResponseInterface $response)
+    {
         $buffer = 'HTTP/' . implode(' ', [
                 $response->getProtocolVersion(),
                 $response->getStatusCode(),
@@ -196,6 +195,7 @@ class Connection
             if (in_array($key, ['Transfer-Encoding'])) {
                 /*
                  * Transfer-Encoding header need set a size to body first line.
+                 * Now working method not support Transfer-Encoding header.
                  */
                 echo "=> Skip $key: {$response->getHeaderLine($key)}\n";
                 continue;
@@ -207,8 +207,7 @@ class Connection
         $buffer .= $response->getBody()->getContents();
 
         $this->socketReadEvent->stop();
-
-        $this->socketWriteEvent = new \EvIo($this->socket, \Ev::WRITE, function ($watcher) use (&$buffer) {
+        $this->socketWriteEvent = new \EvIo($this->socket, \Ev::WRITE, function (\EvIo $watcher) use (&$buffer) {
             echo '=> Write => size ', strlen($buffer), " bytes\n";
             $length = socket_write($this->socket, $buffer);
             if ($length === false) {
