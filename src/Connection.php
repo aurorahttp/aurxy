@@ -10,27 +10,33 @@ use Psr\Http\Message\ResponseInterface;
 
 class Connection
 {
-    const MSG_FIRST_LINE_WAITING = 0;
+    const MSG_LINE_WAITING = 0;
     const MSG_HEAD_WAITING = 10;
     const MSG_HEAD_DOING = 11;
     const MSG_HEAD_DONE = 19;
     const MSG_BODY_WAITING = 20;
     const MSG_BODY_DOING = 21;
     const MSG_BODY_DONE = 29;
-
+    /**
+     * @var resource client socket resource.
+     */
     protected $socket;
-
+    /**
+     * @var string
+     */
     protected $buffer;
-
+    /**
+     * @var int
+     */
     protected $writeBodyLength;
-
-    protected $message;
-
+    /**
+     * @var int
+     */
     protected $messageStatus;
     /**
      * @var \EvTimer
      */
-    protected $connectionTimeoutEvent;
+    protected $waitTimeoutEvent;
     /**
      * @var \EvIo
      */
@@ -39,12 +45,16 @@ class Connection
      * @var \EvIo
      */
     protected $socketWriteEvent;
-
     /**
      * @var RequestFactory
      */
     protected $requestFactory;
 
+    /**
+     * Connection constructor.
+     *
+     * @param resource $socket
+     */
     public function __construct($socket)
     {
         $this->socket = $socket;
@@ -53,19 +63,35 @@ class Connection
         echo "\nConnection created from $address::$port :\n";
     }
 
+    /**
+     * Init status and register watchers.
+     */
     public function handle()
     {
-        $this->messageStatus = static::MSG_FIRST_LINE_WAITING;
+        $this->messageStatus = static::MSG_LINE_WAITING;
         $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, new SafeCallback(function () {
             $this->onRead();
         }));
     }
 
+    /**
+     * Stop all watchers and close client socket.
+     */
     public function close()
     {
+        $this->socketReadEvent and $this->socketReadEvent->stop();
+        $this->socketWriteEvent and $this->socketWriteEvent->stop();
+        $this->waitTimeoutEvent and $this->waitTimeoutEvent->stop();
 
+        socket_close($this->socket);
+        echo "=> Clone connection\n";
     }
 
+    /**
+     * Read socket and write buffer.
+     *
+     * @throws LengthRequiredException
+     */
     public function onRead()
     {
         if ($this->messageStatus == static::MSG_HEAD_WAITING) {
@@ -75,34 +101,54 @@ class Connection
         }
 
         $part = socket_read($this->socket, 1024);
-        if ($this->messageStatus == static::MSG_FIRST_LINE_WAITING) {
+        if ($this->messageStatus == static::MSG_LINE_WAITING) {
+            /*
+             * Find request line.
+             */
             if (false === ($pos = strpos($part, "\r\n"))) {
                 $this->buffer .= $part;
 
                 return;
             }
             $this->buffer .= substr($part, 0, $pos);
-            $this->firstLineReady();
+            /*
+             * Get request line.
+             */
+            list($method, $uri, $version) = explode(' ', $this->buffer);
+            $this->requestFactory = new RequestFactory($method, $uri, $version);
+            $this->buffer = '';
+            $this->afterRequestLine();
+
             $part = substr($part, $pos + 2);
             $this->messageStatus = static::MSG_HEAD_DOING;
         }
         if ($this->messageStatus == static::MSG_HEAD_DOING) {
+            /*
+             * Find request header end.
+             */
             if (false !== ($pos = strpos($part, "\r\n\r\n"))) {
                 $this->buffer .= substr($part, 0, $pos);
                 $this->messageStatus = static::MSG_HEAD_DONE;
-                $this->headReady();
+                $this->requestFactory->setHeadersByRawContent($this->buffer);
+                $this->afterRequestHeader();
                 $this->buffer = substr($part, $pos + 4);
 
                 return;
             }
         } elseif ($this->messageStatus == static::MSG_BODY_DOING) {
+            /*
+             * Write request body stream from client socket.
+             */
             if ($this->requestFactory->getBody()->isWritable()) {
                 if ($this->requestFactory->getBody()->write($this->buffer . $part)) {
                     $this->writeBodyLength += strlen($this->buffer) + strlen($part);
                     $this->buffer = '';
                     $length = $this->requestFactory->headers['Content-Length'];
+                    /*
+                     * Check buffer offset at end of request body.
+                     */
                     if ($length <= $this->writeBodyLength) {
-                        $this->bodyReady();
+                        $this->afterRequestBody();
                         $this->messageStatus = static::MSG_BODY_DONE;
                     }
 
@@ -113,22 +159,27 @@ class Connection
         $this->buffer .= $part;
     }
 
-    public function firstLineReady()
+    /**
+     * Event
+     */
+    public function afterRequestLine()
     {
-        list($method, $uri, $version) = explode(' ', $this->buffer);
-        $this->requestFactory = new RequestFactory($method, $uri, $version);
-        $this->buffer = '';
+        // empty, there should check request method.
     }
 
-    public function headReady()
+    /**
+     * Event
+     *
+     * @throws LengthRequiredException
+     */
+    public function afterRequestHeader()
     {
-        $this->requestFactory->setHeadersByRawContent($this->buffer);
         $uri = $this->requestFactory->getUri();
         echo "=> Request: {$this->requestFactory->getMethod()} {$uri} [{$this->requestFactory->getVersion()}] -> ";
 
         if ($this->requestFactory->getMethod() == 'CONNECT') {
             echo ' Create Tunnel -> ';
-//            $tunnel = new Tunnel($uri->getHost(), $uri->getPort());
+            // $tunnel = new Tunnel($uri->getHost(), $uri->getPort());
             $this->socketReadEvent->stop();
             socket_close($this->socket);
             echo " No Support\n";
@@ -153,20 +204,31 @@ class Connection
         $this->transmit();
     }
 
-    public function bodyReady()
+    /**
+     * Event
+     */
+    public function afterRequestBody()
     {
         $this->transmit();
     }
 
+    /**
+     * Transmit client request to target server.
+     */
     public function transmit()
     {
-        $request = $this->requestFactory->createServerRequest();
-        $options = [
-            'timeout'         => 5.0,
-            'connect_timeout' => 5.0,
-            'headers'         => $request->getHeaders(),
-        ];
+        $request = $this->requestFactory->createRequest();
 
+        $headers = [];
+        foreach (array_keys($request->getHeaders()) as $name) {
+            $headers[$name] = $request->getHeaderLine($name);
+        }
+
+        $options = [
+            'timeout'         => 30.0,
+            'connect_timeout' => 5.0,
+//            'header' => $headers,
+        ];
         try {
             $response = Bridge::send($request, $options);
             echo "done {$response->getBody()->getSize()} byte.\n";
@@ -192,7 +254,7 @@ class Connection
                 $response->getReasonPhrase(),
             ]) . "\r\n";
         foreach (array_keys($response->getHeaders()) as $key) {
-            if (in_array($key, ['Transfer-Encoding'])) {
+            if ($key == 'Transfer-Encoding') {
                 /*
                  * Transfer-Encoding header need set a size to body first line.
                  * Now working method not support Transfer-Encoding header.
@@ -207,7 +269,7 @@ class Connection
         $buffer .= $response->getBody()->getContents();
 
         $this->socketReadEvent->stop();
-        $this->socketWriteEvent = new \EvIo($this->socket, \Ev::WRITE, function (\EvIo $watcher) use (&$buffer) {
+        $this->socketWriteEvent = new \EvIo($this->socket, \Ev::WRITE, function () use (&$buffer) {
             echo '=> Write => size ', strlen($buffer), " bytes\n";
             $length = socket_write($this->socket, $buffer);
             if ($length === false) {
@@ -215,9 +277,7 @@ class Connection
             }
             $buffer = substr($buffer, $length);
             if (empty($buffer)) {
-                $watcher->stop();
-                socket_close($this->socket);
-                echo "=> Clone connection\n";
+                $this->close();
             }
         });
     }

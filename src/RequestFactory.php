@@ -2,9 +2,10 @@
 
 namespace Panlatent\Aurxy;
 
+use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Stream;
 use Panlatent\Http\Message\HeaderStore;
-use Panlatent\Http\Message\ServerRequest;
+use Panlatent\Http\Message\Request;
 use Panlatent\Http\Message\Uri;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
@@ -32,18 +33,23 @@ class RequestFactory
     }
 
     /**
-     * @return ServerRequest
+     * @return Request
      */
-    public function createServerRequest()
+    public function createRequest()
     {
-        $uri = new Uri($this->rawUri);
-        if (empty($uri->getHost()) && isset($this->headers['Host'])) {
-            $uri = $uri->withHost($this->headers['Host']);
-        }
-        $query = $uri->getQuery() ? parse_str($uri->getQuery()) : [];
+        $request = new Request($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->method,
+            $this->getUri());
 
-        $request = new ServerRequest($this->headers->all(), $this->getBody(), $this->version, '', $this->method, $uri,
-            [], [], $query, [], []);
+        return $request;
+    }
+
+    /**
+     * @return GuzzleRequest
+     */
+    public function createGuzzleRequest()
+    {
+        $request = new GuzzleRequest($this->getMethod(), $this->getUri(), $this->headers->all(), $this->getBody(),
+            $this->getVersion());
 
         return $request;
     }
@@ -77,7 +83,7 @@ class RequestFactory
     /**
      * @return string
      */
-    public function getVersion(): string
+    public function getVersion()
     {
         return $this->version;
     }
@@ -85,8 +91,11 @@ class RequestFactory
     /**
      * @param string $version
      */
-    public function setVersion(string $version)
+    public function setVersion($version)
     {
+        if (false !== ($pos = strpos($version, '/'))) {
+            $version = substr($version, $pos + 1);
+        }
         $this->version = $version;
     }
 
@@ -141,8 +150,18 @@ class RequestFactory
     {
         $rawHeaderLines = explode("\r\n", $rawContent);
         foreach ($rawHeaderLines as $headerRow) {
-            list($name, $value) = explode(":", $headerRow);
-            $this->headers->set($name, explode(',', $value));
+            list($name, $values) = explode(":", $headerRow);
+            if (in_array($name, [])) {
+                /*
+                 * (!) This code block not run, because unknown cause,
+                 * Guzzle will send multi same header.
+                 */
+                $values = explode(',', $values);
+            }
+            $values = array_map(function($value) {
+                return trim($value, "\t ");
+            }, (array)$values);
+            $this->headers->set($name, $values);
         }
     }
 

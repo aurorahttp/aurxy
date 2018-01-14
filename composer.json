@@ -5,9 +5,12 @@
     "require": {
         "php": ">=7.0",
         "ext-ev": "*",
-        "symfony/console": "^4.0",
-        "guzzlehttp/guzzle": "^6.3",
-        "panlatent/http-message": "dev-master"
+        "guzzlehttp/guzzle": "~6.3",
+        "symfony/console": "~4.0",
+        "symfony/dom-crawler": "~4.0",
+        "symfony/css-selector": "~4.0",
+        "panlatent/http-exception": "dev-master as 1.0.x-dev",
+        "panlatent/http-message": "dev-master as 1.0.x-dev"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.5"
@@ -19,7 +22,7 @@
             "email": "panlatent@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "Panlatent\\Aurxy\\": "src/"

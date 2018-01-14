@@ -1,9 +1,10 @@
 #!/usr/bin/env php
 <?php
-/*
- * Aurxy
+/**
+ * Aurxy - Http filter and proxy server.
+ *
+ * @author Panlatent <panlatent@gmail.com>
  */
-
 require __DIR__ . '/vendor/autoload.php';
 
 $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
@@ -11,7 +12,6 @@ socket_set_nonblock($socket);
 socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
 socket_bind($socket, '127.0.0.1', 10085);
 socket_listen($socket);
-
 
 set_error_handler(function ($errno, $errstr, $errfile, $errline) use ($socket) {
     echo "$errno: $errstr in $errfile on line $errline\n";
@@ -24,7 +24,6 @@ set_exception_handler(function (\Throwable $exception) use ($socket){
     socket_close($socket);
     exit(0);
 });
-
 
 $socketEv = new EvIo($socket, Ev::READ, new \Panlatent\Aurxy\Ev\SafeCallback(function (EvIo $watcher) use ($socket) {
     $client = socket_accept($socket);
@@ -48,29 +47,9 @@ $signalEv = new EvSignal(SIGTERM, function ($watcher) use ($socket) {
     exit(0);
 });
 
-
-
 $fileWatcher = new EvStat(__FILE__, 5.0, function ($watcher) use ($socket) {
     /** @var EvStat $watcher */
-//    $watcher->stop();
-    echo "Script changed!\n";
-//    socket_close($socket);
-//    echo "Socket close!\n";
-//    if (0 === ($pid = pcntl_fork())) {
-//        echo "Update service!\n";
-//        system('php ' . __FILE__);
-//        exit(0);
-//    } elseif ($pid === -1) {
-//        echo "Update service failed!\n";
-//    }
-//    for (;;) {
-//        pcntl_wait($status);
-//        if (0 === pcntl_wexitstatus($status)) {
-//            break;
-//        }
-//    }
-//
-//    exit(0);
+    echo "Program changed!\n";
 });
 
 Ev::run(Ev::FLAG_AUTO);
