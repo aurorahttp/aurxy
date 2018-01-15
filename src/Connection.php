@@ -2,13 +2,19 @@
 
 namespace Panlatent\Aurxy;
 
+use Aurxy;
 use Panlatent\Aurxy\Ev\SafeCallback;
+use Panlatent\Aurxy\Event\TransactionEvent;
 use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
 use Psr\Http\Message\ResponseInterface;
 
 class Connection
 {
+    const EVENT_TRANSACTION_BEFORE = 'connection.transaction::before';
+    const EVENT_TRANSACTION_HANDLE_BEFORE = 'connection.transaction_handle::before';
+    const EVENT_TRANSACTION_HANDLE_AFTER = 'connection.transaction_handle::after';
+
     const MSG_LINE_WAITING = 0;
     const MSG_HEAD_WAITING = 10;
     const MSG_HEAD_DOING = 11;
@@ -215,9 +221,15 @@ class Connection
      */
     public function transaction()
     {
-        $transaction = new Transaction($this, new RequestHandler(), [new GuzzleBridgeMiddleware()], [new ResponseFixed()]);
+        Aurxy::event(static::EVENT_TRANSACTION_BEFORE);
+        $transaction = new Transaction($this, new RequestHandler(),
+            [new GuzzleBridgeMiddleware()],
+            [new ResponseFixed()]);
         $request = $this->requestFactory->createServerRequest();
+        $event = new TransactionEvent($transaction);
+        Aurxy::event(static::EVENT_TRANSACTION_HANDLE_BEFORE, $event);
         $response = $transaction->handle($request);
+        Aurxy::event(static::EVENT_TRANSACTION_HANDLE_AFTER, $event);
         $this->sendResponse($response);
     }
 
@@ -246,6 +258,7 @@ class Connection
             $length = @socket_write($this->socket, $buffer);
             if ($length === false) {
                 echo '=> socket error: ' . socket_last_error($this->socket) . "\n";
+
                 return;
             }
             $buffer = substr($buffer, $length);
