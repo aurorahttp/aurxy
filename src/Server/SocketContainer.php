@@ -222,8 +222,8 @@ class SocketContainer implements \Iterator, \Countable
             foreach ($this->allowAddresses as $address) {
                 $builders[] = ['address' => $address, 'port' => $listen, 'type' => 'ipv4'];
             }
-        } elseif (strncmp($listen, 'unix://', 7) === 0) { // Create Unix socket
-            $builders[] = ['address' => substr($listen, 7), 'type' => 'unix'];
+        } elseif (strncmp($listen, 'unix:', 5) === 0) { // Create Unix socket
+            $builders[] = ['address' => substr($listen, 5), 'type' => 'unix'];
         } else {
             if (false === strpos($listen, ':')) {
                 throw new InvalidArgumentException();
