@@ -46,6 +46,8 @@ abstract class BaseAurxy
 
     /**
      * Init base environment and run server.
+     *
+     * Use kill -USR2 will call bootstrap method.
      */
     public static function run()
     {
@@ -55,11 +57,12 @@ abstract class BaseAurxy
         static::$watchers[] = new EvSignal(SIGTERM, SafeCallback::wrapper(function () {
             static::shutdown();
         }));
+        static::$watchers[] = new \EvSignal(SIGUSR2, SafeCallback::wrapper(function() {
+            static::bootstrap();
+            echo "Reload bootstrap\n";
+        }));
 
-        static::$event = new EventDispatcher();
-        if (! empty(static::$bootstrap) && is_file(static::$bootstrap)) {
-            require(static::$bootstrap);
-        }
+        static::bootstrap();
 
         $sockets = new SocketContainer((array)static::$options['server']['listen']);
         static::$server = new Server($sockets);
@@ -87,6 +90,19 @@ abstract class BaseAurxy
         $resolver = new OptionsResolver();
         $resolver->setDefaults(static::getDefaultOptions());
         static::$options = $resolver->resolve($options);
+    }
+
+    /**
+     * Init event dispatcher and load bootstrap file.
+     *
+     * If again call this method, will lose old event subscribes.
+     */
+    public static function bootstrap()
+    {
+        static::$event = new EventDispatcher();
+        if (! empty(static::$bootstrap) && is_file(static::$bootstrap)) {
+            require(static::$bootstrap);
+        }
     }
 
     /**
