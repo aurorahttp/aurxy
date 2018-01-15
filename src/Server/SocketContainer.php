@@ -134,7 +134,7 @@ class SocketContainer implements \Iterator, \Countable
          * Check repeat addresses. like lo0: 127.0.0.1 and localhost.
          */
         $map = [];
-        $this->builders = array_filter($this->builders, function ($builder) use(&$map) {
+        $this->builders = array_filter($this->builders, function ($builder) use (&$map) {
             if ($builder['type'] == 'unix') {
                 $address = 'unix://' . $builder['address'];
             } else {
@@ -218,10 +218,9 @@ class SocketContainer implements \Iterator, \Countable
     private function parser($listen)
     {
         $builders = [];
-        if (ctype_digit($listen)) { // Bind port to all address
-            foreach ($this->allowAddresses as $address) {
-                $builders[] = ['address' => $address, 'port' => $listen, 'type' => 'ipv4'];
-            }
+        if (ctype_digit($listen) || preg_match('#^\*:(\d+)$#', $listen, $match)) {
+            // Bind port to all address equate *:port or 0.0.0.0:port
+            $builders[] = ['address' => '0.0.0.0', 'port' => isset($match) ? $match[1] : $listen, 'type' => 'ipv4'];
         } elseif (strncmp($listen, 'unix:', 5) === 0) { // Create Unix socket
             $builders[] = ['address' => substr($listen, 5), 'type' => 'unix'];
         } else {
@@ -248,6 +247,7 @@ class SocketContainer implements \Iterator, \Countable
                     throw new InvalidArgumentException("Not found local host address: $address");
                 }
             }
+
         }
 
         return $builders;
