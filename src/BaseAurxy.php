@@ -3,20 +3,21 @@
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Aurxy\Server;
 use Panlatent\Aurxy\Server\SocketContainer;
+use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 defined('AURXY_DIR') or define('AURXY_DIR', dirname(__DIR__));
 defined('AURXY_CONFIG_FILENAME') or define('AURXY_CONFIG_FILENAME', 'aurxy.yml');
 
-class BaseAurxy
+abstract class BaseAurxy
 {
     const NAME = 'aurxy';
     const VERSION = '0.1.0';
     /**
      * @var EventDispatcher
      */
-    public static $dispatcher;
+    public static $event;
     /**
      * @var OptionsResolver
      */
@@ -31,6 +32,11 @@ class BaseAurxy
     public static $server;
 
     /**
+     * @var string
+     */
+    public static $bootstrap;
+
+    /**
      * Aurxy constructor.
      */
     final private function __construct()
@@ -38,13 +44,11 @@ class BaseAurxy
         // Not allow instance this class.
     }
 
+    /**
+     * Init base environment and run server.
+     */
     public static function run()
     {
-        static::$dispatcher = new EventDispatcher();
-        $sockets = new SocketContainer((array)static::$options['server']['listen']);
-        static::$server = new Server($sockets);
-        static::$server->start();
-
         static::$watchers[] = new EvSignal(SIGKILL, SafeCallback::wrapper(function () {
             static::shutdown();
         }));
@@ -52,9 +56,21 @@ class BaseAurxy
             static::shutdown();
         }));
 
+        static::$event = new EventDispatcher();
+        if (! empty(static::$bootstrap) && is_file(static::$bootstrap)) {
+            require(static::$bootstrap);
+        }
+
+        $sockets = new SocketContainer((array)static::$options['server']['listen']);
+        static::$server = new Server($sockets);
+        static::$server->start();
+
         Ev::run(Ev::FLAG_AUTO);
     }
 
+    /**
+     * Stop server and exit.
+     */
     public static function shutdown()
     {
         static::$server->stop();
@@ -63,6 +79,9 @@ class BaseAurxy
         exit(0);
     }
 
+    /**
+     * @param array $options
+     */
     public static function configure($options)
     {
         $resolver = new OptionsResolver();
@@ -70,13 +89,40 @@ class BaseAurxy
         static::$options = $resolver->resolve($options);
     }
 
+    /**
+     * Trigger an event.
+     *
+     * @param  string    $eventName
+     * @param Event|null $event
+     * @return Event
+     */
+    public static function event($eventName, Event $event = null)
+    {
+        return static::$event->dispatch($eventName, $event);
+    }
+
+    /**
+     * Subscribe an event.
+     *
+     * @param string   $eventName
+     * @param callable $listener
+     * @param int      $priority
+     */
+    public static function on($eventName, $listener, $priority = 0)
+    {
+        static::$event->addListener($eventName, $listener, $priority);
+    }
+
+    /**
+     * @return array
+     */
     public static function getDefaultOptions()
     {
         return [
             'server' => [
                 'listen' => [
-                    '127.0.0.1:10085'
-                ]
+                    '127.0.0.1:10085',
+                ],
             ],
         ];
     }

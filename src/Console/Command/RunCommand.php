@@ -15,13 +15,18 @@ class RunCommand extends Command
     {
         $this->setName('run')
             ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'configure file',
-                AURXY_DIR . '/' . AURXY_CONFIG_FILENAME);
+                AURXY_DIR . '/' . AURXY_CONFIG_FILENAME)
+            ->addOption('bootstrap', null, InputOption::VALUE_REQUIRED,
+                'a bootstrap file for inject user code and events');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         if ($input->hasOption('config')) {
             Aurxy::configure(Yaml::parse(file_get_contents($input->getOption('config'))));
+        }
+        if ($input->hasOption('bootstrap')) {
+            Aurxy::$bootstrap = $input->getOption('bootstrap');
         }
 
         Aurxy::run();
