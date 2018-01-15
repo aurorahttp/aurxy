@@ -18,6 +18,11 @@ class DomFilter extends ContentFilter
         $this->domCrawler = new Crawler($this->content);
     }
 
+    public function handle()
+    {
+
+    }
+
     protected function afterProcess()
     {
         parent::afterProcess();
