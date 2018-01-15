@@ -20,6 +20,15 @@ class SafeCallback
     }
 
     /**
+     * @param callable $callback
+     * @return static
+     */
+    public static function wrapper($callback)
+    {
+        return new static($callback);
+    }
+
+    /**
      * @param \EvWatcher $watcher
      */
     public function __invoke($watcher)
