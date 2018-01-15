@@ -243,9 +243,10 @@ class Connection
         $this->socketReadEvent->stop();
         $this->socketWriteEvent = new \EvIo($this->socket, \Ev::WRITE, function () use (&$buffer) {
             echo '=> Write => size ', strlen($buffer), " bytes\n";
-            $length = socket_write($this->socket, $buffer);
+            $length = @socket_write($this->socket, $buffer);
             if ($length === false) {
-                echo socket_last_error($this->socket), ',';
+                echo '=> socket error: ' . socket_last_error($this->socket) . "\n";
+                return;
             }
             $buffer = substr($buffer, $length);
             if (empty($buffer)) {
