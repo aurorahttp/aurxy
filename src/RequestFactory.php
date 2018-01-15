@@ -145,7 +145,7 @@ class RequestFactory
         if ($this->uri === null) {
             $uri = new Uri($this->rawUri);
             if (empty($uri->getHost()) && isset($this->headers['Host'])) {
-                $uri = $uri->withHost($this->headers['Host']);
+                $uri = $uri->withHost($this->headers->getLine('Host'));
             }
             $this->uri = $uri;
         }
