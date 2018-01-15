@@ -7,9 +7,9 @@ Workflow
 --------
 
 ```
- -------- request -------->         ----------- middleware -----------> 
-|                         |        |                                  |
-Client                   Aurxy Server                     Remote Server          
-|                         |        |                                  |
- <------ response --------         <------------  filter <------------
+   ------ request  ---- filter --->        ---------------> 
+  |                                |      |                |
+Client       Aurxy Server         middleware         Remote Server  
+  |                                |      |                |
+   <----- response ---- filter ----        <---------------
  ```
