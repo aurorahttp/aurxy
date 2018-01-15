@@ -1,9 +1,8 @@
 <?php
 
-namespace Panlatent\Aurxy;
+require __DIR__ . '/BaseAurxy.php';
 
-final class Aurxy
+final class Aurxy extends BaseAurxy
 {
-    const NAME = 'aurxy';
-    const VERSION = '0.1.0';
+
 }

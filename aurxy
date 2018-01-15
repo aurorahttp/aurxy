@@ -6,11 +6,11 @@
  * @author Panlatent <panlatent@gmail.com>
  */
 
-use Panlatent\Aurxy\Aurxy;
 use Panlatent\Aurxy\Console\Application;
 use Panlatent\Aurxy\Console\Command\RunCommand;
 
 require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/src/Aurxy.php';
 
 $app = new Application(Aurxy::NAME, Aurxy::VERSION);
 $app->add(new RunCommand());

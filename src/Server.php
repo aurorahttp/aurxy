@@ -16,7 +16,7 @@ class Server
     /**
      * @var array|EvIo[]
      */
-    protected $socketReadEvent = [];
+    protected $socketReadWatchers = [];
 
     /**
      * Server constructor.
@@ -32,7 +32,7 @@ class Server
     {
         foreach ($this->sockets as $socket) {
 
-            $this->socketReadEvent[] = new EvIo(
+            $this->socketReadWatchers[] = new EvIo(
                 $socket,
                 Ev::READ,
                 SafeCallback::wrapper(
@@ -46,7 +46,11 @@ class Server
 
     public function stop()
     {
+        foreach ($this->socketReadWatchers as $watcher) {
+            $watcher->stop();
+        }
         foreach ($this->sockets as $socket) {
+            socket_shutdown($socket);
             socket_close($socket);
         }
     }
