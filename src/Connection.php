@@ -7,6 +7,7 @@ use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Aurxy\Event\TransactionEvent;
 use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Panlatent\Http\Exception\Client\LengthRequiredException;
+use Panlatent\Http\RawMessage\RawRequestOptions;
 use Psr\Http\Message\ResponseInterface;
 
 class Connection
@@ -15,29 +16,10 @@ class Connection
     const EVENT_TRANSACTION_HANDLE_BEFORE = 'connection.transaction_handle::before';
     const EVENT_TRANSACTION_HANDLE_AFTER = 'connection.transaction_handle::after';
 
-    const MSG_LINE_WAITING = 0;
-    const MSG_HEAD_WAITING = 10;
-    const MSG_HEAD_DOING = 11;
-    const MSG_HEAD_DONE = 19;
-    const MSG_BODY_WAITING = 20;
-    const MSG_BODY_DOING = 21;
-    const MSG_BODY_DONE = 29;
     /**
      * @var resource client socket resource.
      */
     protected $socket;
-    /**
-     * @var string
-     */
-    protected $buffer;
-    /**
-     * @var int
-     */
-    protected $writeBodyLength;
-    /**
-     * @var int
-     */
-    protected $messageStatus;
     /**
      * @var \EvTimer
      */
@@ -73,7 +55,6 @@ class Connection
      */
     public function handle()
     {
-        $this->messageStatus = static::MSG_LINE_WAITING;
         $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, new SafeCallback(function () {
             $this->onRead();
         }));
@@ -94,83 +75,23 @@ class Connection
 
     /**
      * Read socket and write buffer.
-     *
-     * @throws LengthRequiredException
      */
     public function onRead()
     {
-        if ($this->messageStatus == static::MSG_HEAD_WAITING) {
-            $this->messageStatus = static::MSG_HEAD_DOING;
-        } elseif ($this->messageStatus == static::MSG_BODY_WAITING) {
-            $this->messageStatus = static::MSG_BODY_DOING;
+        if ($this->requestFactory === null) {
+            $options = new RawRequestOptions();
+            $options->headerReadyEvent = [$this, 'afterRequestHeader'];
+            $options->bodyReadyEvent = [$this, 'afterRequestBody'];
+            $this->requestFactory = new RequestFactory($options);
         }
 
         $part = socket_read($this->socket, 1024);
-        if ($this->messageStatus == static::MSG_LINE_WAITING) {
-            /*
-             * Find request line.
-             */
-            if (false === ($pos = strpos($part, "\r\n"))) {
-                $this->buffer .= $part;
-
-                return;
-            }
-            $this->buffer .= substr($part, 0, $pos);
-            /*
-             * Get request line.
-             */
-            list($method, $uri, $version) = explode(' ', $this->buffer);
-            $this->requestFactory = new RequestFactory($method, $uri, $version);
-            $this->buffer = '';
-            $this->afterRequestLine();
-
-            $part = substr($part, $pos + 2);
-            $this->messageStatus = static::MSG_HEAD_DOING;
+        $length = 0;
+        for (; $length != strlen($part);) {
+            $length += $successLength = $this->requestFactory->rawRequestStream->write(substr($part, $length));
         }
-        if ($this->messageStatus == static::MSG_HEAD_DOING) {
-            /*
-             * Find request header end.
-             */
-            if (false !== ($pos = strpos($part, "\r\n\r\n"))) {
-                $this->buffer .= substr($part, 0, $pos);
-                $this->messageStatus = static::MSG_HEAD_DONE;
-                $this->requestFactory->setHeadersByRawContent($this->buffer);
-                $this->afterRequestHeader();
-                $this->buffer = substr($part, $pos + 4);
-
-                return;
-            }
-        } elseif ($this->messageStatus == static::MSG_BODY_DOING) {
-            /*
-             * Write request body stream from client socket.
-             */
-            if ($this->requestFactory->getBody()->isWritable()) {
-                if ($this->requestFactory->getBody()->write($this->buffer . $part)) {
-                    $this->writeBodyLength += strlen($this->buffer) + strlen($part);
-                    $this->buffer = '';
-                    $length = $this->requestFactory->headers['Content-Length'];
-                    /*
-                     * Check buffer offset at end of request body.
-                     */
-                    if ($length <= $this->writeBodyLength) {
-                        $this->afterRequestBody();
-                        $this->messageStatus = static::MSG_BODY_DONE;
-                    }
-
-                    return;
-                }
-            }
-        }
-        $this->buffer .= $part;
     }
 
-    /**
-     * Event
-     */
-    public function afterRequestLine()
-    {
-        // empty, there should check request method.
-    }
 
     /**
      * Event
@@ -191,15 +112,13 @@ class Connection
 
             return;
         } elseif ($this->requestFactory->getMethod() == 'POST') {
-            if (! $this->requestFactory->headers->has('Content-Length')) {
+            if (! $this->requestFactory->getHeaders()->has('Content-Length')) {
                 throw new LengthRequiredException();
             }
-            $this->messageStatus = static::MSG_BODY_WAITING;
             /*
              * If Content-Length is zero, can't read socket.
              */
-            if ($this->requestFactory->headers->getLine('Content-Length') == 0) {
-                $this->messageStatus = static::MSG_BODY_DONE;
+            if ($this->requestFactory->getHeaders()->getLine('Content-Length') == 0) {
                 $this->transaction();
             }
 

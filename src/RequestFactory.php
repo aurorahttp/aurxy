@@ -8,29 +8,27 @@ use Panlatent\Http\Message\HeaderStore;
 use Panlatent\Http\Message\Request;
 use Panlatent\Http\Message\ServerRequest;
 use Panlatent\Http\Message\Uri;
+use Panlatent\Http\RawMessage\RawRequestOptions;
+use Panlatent\Http\RawMessage\RequestStream;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
 class RequestFactory
 {
     /**
-     * @var HeaderStore
+     * @var RequestStream
      */
-    public $headers;
+    public $rawRequestStream;
 
     /**
      * RequestFactory constructor.
      *
-     * @param string $method
-     * @param string $uri
-     * @param string $version
+     * @param RawRequestOptions $options
      */
-    public function __construct($method = null, $uri = null, $version = '1.1')
+    public function __construct(RawRequestOptions $options)
     {
         $this->headers = new HeaderStore();
-        $this->setMethod($method);
-        $this->setRawUri($uri);
-        $this->setVersion($version);
+        $this->rawRequestStream = new RequestStream($options);
     }
 
     /**
@@ -154,27 +152,35 @@ class RequestFactory
     }
 
     /**
+     * @var HeaderStore
+     */
+    private $headers;
+
+    /**
      * Set headers by raw content.
      *
-     * @param string $rawContent
+     * @return HeaderStore
      */
-    public function setHeadersByRawContent($rawContent)
+    public function getHeaders()
     {
-        $rawHeaderLines = explode("\r\n", $rawContent);
-        foreach ($rawHeaderLines as $headerRow) {
-            list($name, $values) = explode(":", $headerRow);
-            if (in_array($name, [])) {
-                /*
-                 * (!) This code block not run, because unknown cause,
-                 * Guzzle will send multi same header.
-                 */
-                $values = explode(',', $values);
+        if ($this->headers === null) {
+            $this->headers = new HeaderStore();
+            foreach ($this->rawRequestStream->getStandardHeaders() as $name => $values) {
+                if (in_array($name, [])) {
+                    /*
+                     * (!) This code block not run, because unknown cause,
+                     * Guzzle will send multi same header.
+                     */
+                    $values = explode(',', $values);
+                }
+                $values = array_map(function ($value) {
+                    return trim($value, "\t ");
+                }, (array)$values);
+                $this->headers->set($name, $values);
             }
-            $values = array_map(function($value) {
-                return trim($value, "\t ");
-            }, (array)$values);
-            $this->headers->set($name, $values);
         }
+
+        return $this->headers;
     }
 
     /**
@@ -188,8 +194,7 @@ class RequestFactory
     public function getBody()
     {
         if ($this->body === null) {
-            $stream = fopen('php://temp', 'r+');
-            $this->body = new Stream($stream);
+            $this->body = new Stream($this->rawRequestStream->getBodyStream());
         }
 
         return $this->body;
