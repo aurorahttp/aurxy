@@ -101,7 +101,7 @@ abstract class BaseAurxy
     {
         static::$event = new EventDispatcher();
         if (! empty(static::$bootstrap) && is_file(static::$bootstrap)) {
-            require(static::$bootstrap);
+            include(static::$bootstrap);
         }
     }
 
