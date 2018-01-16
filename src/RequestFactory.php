@@ -8,8 +8,8 @@ use Panlatent\Http\Message\HeaderStore;
 use Panlatent\Http\Message\Request;
 use Panlatent\Http\Message\ServerRequest;
 use Panlatent\Http\Message\Uri;
-use Panlatent\Http\RawMessage\RawRequestOptions;
-use Panlatent\Http\RawMessage\RequestStream;
+use Panlatent\Http\Server\RequestStream;
+use Panlatent\Http\Server\RequestStreamOptions;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -18,17 +18,17 @@ class RequestFactory
     /**
      * @var RequestStream
      */
-    public $rawRequestStream;
+    public $requestStream;
 
     /**
      * RequestFactory constructor.
      *
-     * @param RawRequestOptions $options
+     * @param RequestStreamOptions $options
      */
-    public function __construct(RawRequestOptions $options)
+    public function __construct(RequestStreamOptions $options)
     {
         $this->headers = new HeaderStore();
-        $this->rawRequestStream = new RequestStream($options);
+        $this->requestStream = new RequestStream($options);
     }
 
     /**
@@ -36,7 +36,7 @@ class RequestFactory
      */
     public function createRequest()
     {
-        $request = new Request($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->method,
+        $request = new Request($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->getMethod(),
             $this->getUri());
 
         return $request;
@@ -47,7 +47,7 @@ class RequestFactory
      */
     public function createServerRequest()
     {
-        $request = new ServerRequest($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->method,
+        $request = new ServerRequest($this->headers->all(), $this->getBody(), $this->getVersion(), '', $this->getMethod(),
             $this->getUri());
 
         return $request;
@@ -65,24 +65,11 @@ class RequestFactory
     }
 
     /**
-     * @var string
-     */
-    private $method;
-
-    /**
      * @return string
      */
     public function getMethod()
     {
-        return $this->method;
-    }
-
-    /**
-     * @param string $method
-     */
-    public function setMethod($method)
-    {
-        $this->method = $method;
+        return $this->requestStream->getMethod();
     }
 
     /**
@@ -95,39 +82,13 @@ class RequestFactory
      */
     public function getVersion()
     {
-        return $this->version;
-    }
-
-    /**
-     * @param string $version
-     */
-    public function setVersion($version)
-    {
-        if (false !== ($pos = strpos($version, '/'))) {
-            $version = substr($version, $pos + 1);
+        if ($this->version === null) {
+            $version = $this->requestStream->getVersion();
+            if (false !== ($pos = strpos($version, '/'))) {
+                $this->version = substr($version, $pos + 1);
+            }
         }
-        $this->version = $version;
-    }
-
-    /**
-     * @var string
-     */
-    private $rawUri;
-
-    /**
-     * @return string
-     */
-    public function getRawUri()
-    {
-        return $this->rawUri;
-    }
-
-    /**
-     * @param string $rawUri
-     */
-    public function setRawUri(string $rawUri)
-    {
-        $this->rawUri = $rawUri;
+        return $this->version;
     }
 
     /**
@@ -141,9 +102,9 @@ class RequestFactory
     public function getUri()
     {
         if ($this->uri === null) {
-            $uri = new Uri($this->rawUri);
-            if (empty($uri->getHost()) && isset($this->headers['Host'])) {
-                $uri = $uri->withHost($this->headers->getLine('Host'));
+            $uri = new Uri($this->requestStream->getUri());
+            if (empty($uri->getHost()) && isset($this->getHeaders()['Host'])) {
+                $uri = $uri->withHost($this->getHeaders()->getLine('Host'));
             }
             $this->uri = $uri;
         }
@@ -165,7 +126,7 @@ class RequestFactory
     {
         if ($this->headers === null) {
             $this->headers = new HeaderStore();
-            foreach ($this->rawRequestStream->getStandardHeaders() as $name => $values) {
+            foreach ($this->requestStream->getStandardHeaders() as $name => $values) {
                 if (in_array($name, [])) {
                     /*
                      * (!) This code block not run, because unknown cause,
@@ -194,7 +155,12 @@ class RequestFactory
     public function getBody()
     {
         if ($this->body === null) {
-            $this->body = new Stream($this->rawRequestStream->getBodyStream());
+            if ($this->requestStream->isWithBody()) {
+                $stream = $this->requestStream->getBodyStream();
+            } else {
+                $stream = fopen('php://memory', 'r+');
+            }
+            $this->body = new Stream($stream);
         }
 
         return $this->body;

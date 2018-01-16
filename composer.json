@@ -11,16 +11,17 @@
         "symfony/css-selector": "~3.4",
         "symfony/yaml": "~3.4",
         "symfony/options-resolver": "~3.4",
+        "symfony/process": "~3.4",
+        "monolog/monolog": "^1.23",
         "symfony/event-dispatcher": "~3.4",
-        "panlatent/http-exception": "dev-master as 1.0.x-dev",
-        "panlatent/http-message": "dev-master as 1.0.x-dev",
-        "panlatent/http-raw-message": "1.0.x-dev",
+        "panlatent/http-foundation": "~1.0",
+        "panlatent/http-exception": "~1.0",
+        "panlatent/http-message": "~1.0",
+        "panlatent/http-server-stream": "1.0.x-dev",
         "panlatent/http-server-filter": "~1.0.1",
         "http-interop/http-server-middleware": "^1.0",
         "http-interop/http-factory": "^0.3.0",
-        "http-interop/http-server-handler": "^1.0",
-        "symfony/process": "~3.4",
-        "monolog/monolog": "^1.23"
+        "http-interop/http-server-handler": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.5"
@@ -32,7 +33,8 @@
             "email": "panlatent@gmail.com"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Panlatent\\Aurxy\\": "src/"
@@ -45,8 +47,24 @@
     },
     "repositories": [
         {
-            "type": "vcs",
-            "url": "https://github.com/panlatent/http-server-filter"
+            "type": "path",
+            "url": "../http-foundation"
+        },
+        {
+            "type": "path",
+            "url": "../http-exception"
+        },
+        {
+            "type": "path",
+            "url": "../http-message"
+        },
+        {
+            "type": "path",
+            "url": "../http-server-stream"
+        },
+        {
+            "type": "path",
+            "url": "../http-server-filter"
         }
     ]
 }

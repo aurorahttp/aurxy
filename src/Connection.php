@@ -6,8 +6,8 @@ use Aurxy;
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Aurxy\Event\TransactionEvent;
 use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
-use Panlatent\Http\Exception\Client\LengthRequiredException;
-use Panlatent\Http\RawMessage\RawRequestOptions;
+use Panlatent\Http\Client\LengthRequiredException;
+use Panlatent\Http\Server\RequestStreamOptions;
 use Psr\Http\Message\ResponseInterface;
 
 class Connection
@@ -79,19 +79,18 @@ class Connection
     public function onRead()
     {
         if ($this->requestFactory === null) {
-            $options = new RawRequestOptions();
+            $options = new RequestStreamOptions();
             $options->headerReadyEvent = [$this, 'afterRequestHeader'];
-            $options->bodyReadyEvent = [$this, 'afterRequestBody'];
+            $options->bodyReadEvent = [$this, 'afterRequestBody'];
             $this->requestFactory = new RequestFactory($options);
         }
 
         $part = socket_read($this->socket, 1024);
         $length = 0;
         for (; $length != strlen($part);) {
-            $length += $successLength = $this->requestFactory->rawRequestStream->write(substr($part, $length));
+            $length += $successLength = $this->requestFactory->requestStream->write(substr($part, $length));
         }
     }
-
 
     /**
      * Event
