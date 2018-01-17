@@ -1,6 +1,6 @@
 {
     "name": "panlatent/aurxy",
-    "description": "Http proxy server with filter",
+    "description": "HTTP proxy server with powerful customizable filter rules",
     "type": "project",
     "require": {
         "php": ">=7.0",
