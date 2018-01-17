@@ -17,10 +17,10 @@
         "panlatent/http-foundation": "~1.0",
         "panlatent/http-exception": "~1.0",
         "panlatent/http-message": "~1.0",
-        "panlatent/http-server-stream": "1.0.x-dev",
+        "panlatent/http-message-codec": "1.0.x-dev",
         "panlatent/http-server-filter": "~1.0.1",
         "http-interop/http-server-middleware": "^1.0",
-        "http-interop/http-factory": "^0.3.0",
+        "http-interop/http-factory": "~1.0",
         "http-interop/http-server-handler": "^1.0"
     },
     "require-dev": {
@@ -60,7 +60,7 @@
         },
         {
             "type": "path",
-            "url": "../http-server-stream"
+            "url": "../http-message-codec"
         },
         {
             "type": "path",
