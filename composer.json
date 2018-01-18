@@ -44,27 +44,5 @@
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../http-foundation"
-        },
-        {
-            "type": "path",
-            "url": "../http-exception"
-        },
-        {
-            "type": "path",
-            "url": "../http-message"
-        },
-        {
-            "type": "path",
-            "url": "../http-message-codec"
-        },
-        {
-            "type": "path",
-            "url": "../http-server-filter"
-        }
-    ]
+    }
 }
