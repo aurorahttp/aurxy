@@ -3,7 +3,7 @@
 namespace Panlatent\Aurxy\Event;
 
 use Panlatent\Aurxy\Event;
-use Panlatent\Aurxy\Transaction;
+use Panlatent\Http\Transaction;
 
 class TransactionEvent extends Event
 {

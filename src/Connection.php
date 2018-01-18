@@ -3,12 +3,16 @@
 namespace Panlatent\Aurxy;
 
 use Aurxy;
+use Panlatent\Aurxy\Adapter\GuzzleDecodeAdapter;
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Aurxy\Event\TransactionEvent;
 use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Panlatent\Http\Client\LengthRequiredException;
-use Panlatent\Http\Server\RequestStreamOptions;
+use Panlatent\Http\Message\Decoder;
+use Panlatent\Http\Message\Decoder\Stream;
+use Panlatent\Http\Transaction;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Connection
 {
@@ -33,9 +37,9 @@ class Connection
      */
     protected $socketWriteEvent;
     /**
-     * @var RequestFactory
+     * @var Stream
      */
-    protected $requestFactory;
+    protected $decodeStream;
 
     /**
      * Connection constructor.
@@ -78,17 +82,16 @@ class Connection
      */
     public function onRead()
     {
-        if ($this->requestFactory === null) {
-            $options = new RequestStreamOptions();
-            $options->headerReadyEvent = [$this, 'afterRequestHeader'];
-            $options->bodyReadEvent = [$this, 'afterRequestBody'];
-            $this->requestFactory = new RequestFactory($options);
+        if ($this->decodeStream === null) {
+            $this->decodeStream = new Stream();
+            $this->decodeStream->getContext()->setHeaderReady([$this, 'afterRequestHeader']);
+            $this->decodeStream->getContext()->setBodyReady([$this, 'afterRequestBody']);
         }
 
         $part = socket_read($this->socket, 1024);
         $length = 0;
         for (; $length != strlen($part);) {
-            $length += $successLength = $this->requestFactory->requestStream->write(substr($part, $length));
+            $length += $successLength = $this->decodeStream->write(substr($part, $length));
         }
     }
 
@@ -99,10 +102,14 @@ class Connection
      */
     public function afterRequestHeader()
     {
-        $uri = $this->requestFactory->getUri();
-        echo "=> Request: {$this->requestFactory->getMethod()} {$uri} [{$this->requestFactory->getVersion()}] -> ";
+        $codec = new Decoder();
+        $codec->setAdapter(new GuzzleDecodeAdapter());
+        $request = $codec->decode($this->decodeStream);
 
-        if ($this->requestFactory->getMethod() == 'CONNECT') {
+        $uri = $this->decodeStream->getUri();
+        echo "=> Request: {$request->getMethod()} {$uri} [{$request->getProtocolVersion()}] -> ";
+
+        if ($request->getMethod() == 'CONNECT') {
             echo ' Create Tunnel -> ';
             // $tunnel = new Tunnel($uri->getHost(), $uri->getPort());
             $this->socketReadEvent->stop();
@@ -110,20 +117,20 @@ class Connection
             echo " No Support\n";
 
             return;
-        } elseif ($this->requestFactory->getMethod() == 'POST') {
-            if (! $this->requestFactory->getHeaders()->has('Content-Length')) {
+        } elseif ($request->getMethod() == 'POST') {
+            if (! $request->hasHeader('Content-Length')) {
                 throw new LengthRequiredException();
             }
             /*
              * If Content-Length is zero, can't read socket.
              */
-            if ($this->requestFactory->getHeaders()->getLine('Content-Length') == 0) {
-                $this->transaction();
+            if ($request->getHeaderLine('Content-Length') == 0) {
+                $this->transaction($request);
             }
 
             return;
         }
-        $this->transaction();
+        $this->transaction($request);
     }
 
     /**
@@ -131,19 +138,21 @@ class Connection
      */
     public function afterRequestBody()
     {
-        $this->transaction();
+        // empty
     }
 
     /**
      * Run a HTTP transaction.
+     *
+     * @param ServerRequestInterface $request
      */
-    public function transaction()
+    public function transaction(ServerRequestInterface $request)
     {
         Aurxy::event(static::EVENT_TRANSACTION_BEFORE);
-        $transaction = new Transaction($this, new RequestHandler(),
-            [new GuzzleBridgeMiddleware()],
-            [new ResponseFixed()]);
-        $request = $this->requestFactory->createServerRequest();
+        $transaction = new Transaction();
+        $transaction->getMiddlewares()->push(new GuzzleBridgeMiddleware());
+        $transaction->getFilters()->insert(new ResponseFixed(), 0);
+        $transaction->setRequestHandler(new RequestHandler());
         $event = new TransactionEvent($transaction);
         Aurxy::event(static::EVENT_TRANSACTION_HANDLE_BEFORE, $event);
         $response = $transaction->handle($request);

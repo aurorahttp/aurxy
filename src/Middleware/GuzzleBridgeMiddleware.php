@@ -7,7 +7,7 @@ use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\TransferException;
 use Interop\Http\Server\RequestHandlerInterface;
 use Panlatent\Aurxy\BadGatewayResponseFactory;
-use Panlatent\Aurxy\Middleware;
+use Panlatent\Http\Middleware;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
