@@ -19,10 +19,18 @@ abstract class ContentFilter extends ResponseFilter implements HandleInterface, 
      * @var string
      */
     protected $content;
+    /**
+     * @var
+     */
+    protected $contentTypes = [];
 
     public function process(ResponseInterface $response): ResponseInterface
     {
         $this->response = $response;
+        if (! $this->allowContentType()) {
+            return $response;
+        }
+
         $stream = $this->createStream();
         $this->beforeProcess();
 
@@ -53,5 +61,18 @@ abstract class ContentFilter extends ResponseFilter implements HandleInterface, 
     protected function afterProcess()
     {
 
+    }
+
+    protected function allowContentType()
+    {
+        if (! $this->response->hasHeader('Content-Type')) {
+            return false;
+        }
+        $contentType = $this->response->getHeaderLine('Content-Type');
+        if (false !== ($pos = strpos($contentType, ';'))) {
+            $contentType = substr($contentType, 0, $pos);
+        }
+
+        return in_array(trim($contentType), $this->contentTypes);
     }
 }

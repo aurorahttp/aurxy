@@ -11,6 +11,13 @@ class DomFilter extends ContentFilter
      * @var Crawler
      */
     protected $domCrawler;
+    /**
+     * @var array
+     */
+    protected $contentTypes =[
+        'application/xml',
+        'text/html',
+    ];
 
     protected function beforeProcess()
     {
@@ -20,7 +27,7 @@ class DomFilter extends ContentFilter
 
     public function handle()
     {
-
+        // empty
     }
 
     protected function afterProcess()

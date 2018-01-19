@@ -2,7 +2,9 @@
 
 namespace Aurxy;
 
-abstract class Filter extends \Panlatent\Http\Filter
+use Panlatent\Http\Transaction\ProcessableInterface;
+
+abstract class Filter extends \Panlatent\Http\Filter implements ProcessableInterface
 {
     const PRIORITY_MIN = 1;
     const PRIORITY_MAX = 65535;
