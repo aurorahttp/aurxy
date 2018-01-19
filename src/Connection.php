@@ -152,13 +152,13 @@ class Connection
     public function transaction(ServerRequestInterface $request)
     {
         Aurxy::event(static::EVENT_TRANSACTION_BEFORE);
-        $transaction = new Transaction();
+        $transaction = new Transaction($request);
         $transaction->getMiddlewares()->push(new GuzzleBridgeMiddleware());
         $transaction->getFilters()->insert(new ResponseFixed(), 0);
         $transaction->setRequestHandler(new RequestHandler());
         $event = new TransactionEvent($transaction);
         Aurxy::event(static::EVENT_TRANSACTION_HANDLE_BEFORE, $event);
-        $response = $transaction->handle($request);
+        $response = $transaction->handle();
         Aurxy::event(static::EVENT_TRANSACTION_HANDLE_AFTER, $event);
         $this->sendResponse($response);
     }
