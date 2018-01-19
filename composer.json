@@ -9,22 +9,20 @@
         "symfony/console": "~3.4",
         "symfony/dom-crawler": "~3.4",
         "symfony/css-selector": "~3.4",
+        "symfony/event-dispatcher": "~3.4",
         "symfony/yaml": "~3.4",
         "symfony/options-resolver": "~3.4",
         "symfony/process": "~3.4",
         "monolog/monolog": "^1.23",
-        "symfony/event-dispatcher": "~3.4",
         "panlatent/http-foundation": "~1.0",
         "panlatent/http-exception": "~1.0",
         "panlatent/http-message": "~1.0",
         "panlatent/http-message-codec": "~1.0",
-        "panlatent/http-transaction": "~1.0",
-        "http-interop/http-server-middleware": "^1.0",
-        "http-interop/http-factory": "~1.0",
-        "http-interop/http-server-handler": "^1.0"
+        "panlatent/http-transaction": "~1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.5"
+        "phing/phing": "^2.16",
+        "codeception/codeception": "^2.3"
     },
     "license": "MIT",
     "authors": [
