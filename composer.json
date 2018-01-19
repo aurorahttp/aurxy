@@ -35,7 +35,7 @@
     "prefer-stable": true,
     "autoload": {
         "psr-4": {
-            "Panlatent\\Aurxy\\": "src/"
+            "Aurxy\\": "src/"
         }
     },
     "extra": {

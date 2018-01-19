@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Transaction;
+namespace Aurxy\Transaction;
 
 interface ConnectionManageInterface
 {

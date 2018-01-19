@@ -1,8 +1,8 @@
 <?php
 
-use Panlatent\Aurxy\Ev\SafeCallback;
-use Panlatent\Aurxy\Server;
-use Panlatent\Aurxy\Server\SocketContainer;
+use Aurxy\Ev\SafeCallback;
+use Aurxy\Server;
+use Aurxy\Server\SocketContainer;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\OptionsResolver\OptionsResolver;

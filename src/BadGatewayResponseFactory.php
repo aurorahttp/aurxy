@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Aurxy;
 
 use Exception;
 use GuzzleHttp\Psr7\Response;

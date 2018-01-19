@@ -1,13 +1,13 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Aurxy;
 
 use Aurxy;
-use Panlatent\Aurxy\Adapter\GuzzleDecodeAdapter;
-use Panlatent\Aurxy\Ev\SafeCallback;
-use Panlatent\Aurxy\Event\TransactionEvent;
-use Panlatent\Aurxy\Filter\ResponseFixed;
-use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
+use Aurxy\Adapter\GuzzleDecodeAdapter;
+use Aurxy\Ev\SafeCallback;
+use Aurxy\Event\TransactionEvent;
+use Aurxy\Filter\ResponseFixed;
+use Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Panlatent\Http\Client\LengthRequiredException;
 use Panlatent\Http\Message\Decoder;
 use Panlatent\Http\Message\Decoder\Stream;

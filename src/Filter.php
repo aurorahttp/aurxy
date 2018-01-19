@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Aurxy;
 
 abstract class Filter extends \Panlatent\Http\Filter
 {

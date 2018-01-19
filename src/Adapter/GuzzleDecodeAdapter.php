@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Adapter;
+namespace Aurxy\Adapter;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Panlatent\Http\Message\Decoder;

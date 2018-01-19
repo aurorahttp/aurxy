@@ -1,8 +1,8 @@
 <?php
 
-namespace Panlatent\Aurxy\Filter;
+namespace Aurxy\Filter;
 
-use Panlatent\Aurxy\Filter;
+use Aurxy\Filter;
 use Panlatent\Http\Server\ResponseFilterInterface;
 
 abstract class ResponseFilter extends Filter implements ResponseFilterInterface

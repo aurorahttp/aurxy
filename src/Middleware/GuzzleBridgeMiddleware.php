@@ -1,12 +1,12 @@
 <?php
 
-namespace Panlatent\Aurxy\Middleware;
+namespace Aurxy\Middleware;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\TransferException;
 use Interop\Http\Server\RequestHandlerInterface;
-use Panlatent\Aurxy\BadGatewayResponseFactory;
+use Aurxy\BadGatewayResponseFactory;
 use Panlatent\Http\Middleware;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;

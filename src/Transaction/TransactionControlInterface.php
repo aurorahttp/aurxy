@@ -1,9 +1,6 @@
 <?php
 
-
-namespace Panlatent\Aurxy\Transaction;
-
-use Panlatent\Aurxy\Transaction;
+namespace Aurxy\Transaction;
 
 interface TransactionControlInterface
 {

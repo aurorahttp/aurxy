@@ -1,12 +1,12 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Aurxy;
 
 use Aurxy;
 use Ev;
 use EvIo;
-use Panlatent\Aurxy\Ev\SafeCallback;
-use Panlatent\Aurxy\Server\SocketContainer;
+use Aurxy\Ev\SafeCallback;
+use Aurxy\Server\SocketContainer;
 
 class Server
 {

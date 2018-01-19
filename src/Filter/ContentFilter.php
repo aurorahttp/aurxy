@@ -1,11 +1,11 @@
 <?php
 
-namespace Panlatent\Aurxy\Filter;
+namespace Aurxy\Filter;
 
 use GuzzleHttp\Psr7\Stream;
-use Panlatent\Aurxy\HandleInterface;
-use Panlatent\Aurxy\HandleReplaceInterface;
-use Panlatent\Aurxy\HandleReplaceTrait;
+use Aurxy\HandleInterface;
+use Aurxy\HandleReplaceInterface;
+use Aurxy\HandleReplaceTrait;
 use Psr\Http\Message\ResponseInterface;
 
 abstract class ContentFilter extends ResponseFilter implements HandleInterface, HandleReplaceInterface

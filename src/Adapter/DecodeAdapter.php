@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Adapter;
+namespace Aurxy\Adapter;
 
 use Panlatent\Http\Message\Decoder;
 use Panlatent\Http\Message\Decoder\AdapterInterface;

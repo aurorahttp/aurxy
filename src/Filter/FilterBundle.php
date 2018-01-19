@@ -1,8 +1,8 @@
 <?php
 
-namespace Panlatent\Aurxy\Filter;
+namespace Aurxy\Filter;
 
-use Panlatent\Aurxy\Bundle;
+use Aurxy\Bundle;
 use Panlatent\Http\Server\FilterInterface;
 use SplPriorityQueue;
 

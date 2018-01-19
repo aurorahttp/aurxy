@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Aurxy;
 
 class Event extends \Symfony\Component\EventDispatcher\Event
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Console;
+namespace Aurxy\Console;
 
 class Application extends \Symfony\Component\Console\Application
 {

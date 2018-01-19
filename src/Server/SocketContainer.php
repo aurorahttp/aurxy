@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Server;
+namespace Aurxy\Server;
 
 use InvalidArgumentException;
 

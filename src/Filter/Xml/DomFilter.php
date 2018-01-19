@@ -1,8 +1,8 @@
 <?php
 
-namespace Panlatent\Aurxy\Filter\Xml;
+namespace Aurxy\Filter\Xml;
 
-use Panlatent\Aurxy\Filter\ContentFilter;
+use Aurxy\Filter\ContentFilter;
 use Symfony\Component\DomCrawler\Crawler;
 
 class DomFilter extends ContentFilter

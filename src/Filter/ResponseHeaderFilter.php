@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Filter;
+namespace Aurxy\Filter;
 
 use Psr\Http\Message\ResponseInterface;
 

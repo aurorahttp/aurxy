@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy\Console\Command;
+namespace Aurxy\Console\Command;
 
 use Aurxy;
 use Symfony\Component\Console\Command\Command;

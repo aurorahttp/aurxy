@@ -1,8 +1,8 @@
 <?php
 
-namespace Panlatent\Aurxy\Event;
+namespace Aurxy\Event;
 
-use Panlatent\Aurxy\Event;
+use Aurxy\Event;
 use Panlatent\Http\Transaction;
 
 class TransactionEvent extends Event

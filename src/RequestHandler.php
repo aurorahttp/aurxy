@@ -1,6 +1,6 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Aurxy;
 
 use GuzzleHttp\Psr7\Response;
 use Interop\Http\Server\RequestHandlerInterface;
