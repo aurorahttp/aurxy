@@ -52,7 +52,7 @@ class Connection
         $this->socket = $socket;
         socket_set_nonblock($socket);
         socket_getpeername($socket, $address, $port);
-        echo "\nConnection created from $address::$port :\n";
+        Aurxy::access("connection created from $address:$port");
     }
 
     /**
@@ -74,8 +74,9 @@ class Connection
         $this->socketWriteEvent and $this->socketWriteEvent->stop();
         $this->waitTimeoutEvent and $this->waitTimeoutEvent->stop();
 
+        socket_getpeername($this->socket, $address, $port);
         socket_close($this->socket);
-        echo "=> Clone connection\n";
+        Aurxy::debug("connection close from $address:$port");
     }
 
     /**
@@ -108,14 +109,13 @@ class Connection
         $request = $codec->decode($this->decodeStream);
 
         $uri = $this->decodeStream->getUri();
-        echo "=> Request: {$request->getMethod()} {$uri} [{$request->getProtocolVersion()}] -> ";
+        Aurxy::access("{$request->getMethod()} {$uri} HTTP/{$request->getProtocolVersion()}");
 
         if ($request->getMethod() == 'CONNECT') {
-            echo ' Create Tunnel -> ';
+            Aurxy::debug('not supported client create tunnel');
             // $tunnel = new Tunnel($uri->getHost(), $uri->getPort());
             $this->socketReadEvent->stop();
-            socket_close($this->socket);
-            echo " No Support\n";
+            $this->close();
 
             return;
         } elseif ($request->getMethod() == 'POST') {
@@ -185,7 +185,7 @@ class Connection
             echo '=> Write => size ', strlen($buffer), " bytes\n";
             $length = @socket_write($this->socket, $buffer);
             if ($length === false) {
-                echo '=> socket error: ' . socket_last_error($this->socket) . "\n";
+                Aurxy::error('Socket error: ' . socket_last_error($this->socket));
 
                 return;
             }

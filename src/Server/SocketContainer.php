@@ -2,6 +2,7 @@
 
 namespace Aurxy\Server;
 
+use Aurxy;
 use InvalidArgumentException;
 
 /**
@@ -199,14 +200,14 @@ class SocketContainer implements \Iterator, \Countable
                 if (! @socket_bind($socket, $builder['address'], $builder['port'])) {
                     throw new SocketException("unable to bind address {$builder['address']}:{$builder['port']}");
                 }
-                echo " => socket bind {$builder['address']}:{$builder['port']}\n";
+                Aurxy::debug("Socket bind {$builder['address']}:{$builder['port']}");
                 socket_listen($socket);
                 break;
             case 'unix':
                 if (! @socket_bind($socket, $builder['address'])) {
                     throw new SocketException("unable to bind address {$builder['address']}");
                 }
-                echo " => socket bind {$builder['address']}\n";
+                Aurxy::debug("socket bind {$builder['address']}");
                 break;
         }
     }

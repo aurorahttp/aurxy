@@ -27,8 +27,8 @@ class RunCommand extends Command
         }
         if ($input->hasOption('bootstrap')) {
             Aurxy::$bootstrap = $input->getOption('bootstrap');
-            $output->writeln("PID: " . posix_getpid());
         }
+        $output->writeln("Start server pid => " . posix_getpid());
 
         Aurxy::run();
     }

@@ -45,11 +45,11 @@ class GuzzleBridgeMiddleware extends Middleware
         ];
         try {
             $response = $this->send($request, $options);
-            echo "done {$response->getBody()->getSize()} byte.\n";
+            Aurxy::debug("GuzzleBridgeMiddleware response data {$response->getBody()->getSize()} bytes");
         } catch (BadResponseException $exception) {
             $response = $exception->getResponse();
         } catch (TransferException $exception) {
-            echo "failed {$exception->getMessage()}\n";
+            Aurxy::error("GuzzleBridgeMiddleware response data failed. {$exception->getMessage()}");
             $response = (new BadGatewayResponseFactory($request, $exception))->createResponse();
         }
 

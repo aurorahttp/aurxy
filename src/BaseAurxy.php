@@ -3,7 +3,8 @@
 use Aurxy\Ev\SafeCallback;
 use Aurxy\Server;
 use Aurxy\Server\SocketContainer;
-use Symfony\Component\EventDispatcher\Event;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -30,7 +31,10 @@ abstract class BaseAurxy
      * @var Server
      */
     public static $server;
-
+    /**
+     * @var Logger
+     */
+    public static $log;
     /**
      * @var string
      */
@@ -51,6 +55,8 @@ abstract class BaseAurxy
      */
     public static function run()
     {
+        static::$log = static::createLogger();
+
         static::$watchers[] = new EvSignal(SIGKILL, SafeCallback::wrapper(function () {
             static::shutdown();
         }));
@@ -59,7 +65,7 @@ abstract class BaseAurxy
         }));
         static::$watchers[] = new \EvSignal(SIGUSR2, SafeCallback::wrapper(function() {
             static::bootstrap();
-            echo "Reload bootstrap\n";
+            Aurxy::debug("Reload bootstrap");
         }));
 
         static::bootstrap();
@@ -106,30 +112,6 @@ abstract class BaseAurxy
     }
 
     /**
-     * Trigger an event.
-     *
-     * @param  string    $eventName
-     * @param Event|null $event
-     * @return Event
-     */
-    public static function event($eventName, Event $event = null)
-    {
-        return static::$event->dispatch($eventName, $event);
-    }
-
-    /**
-     * Subscribe an event.
-     *
-     * @param string   $eventName
-     * @param callable $listener
-     * @param int      $priority
-     */
-    public static function on($eventName, $listener, $priority = 0)
-    {
-        static::$event->addListener($eventName, $listener, $priority);
-    }
-
-    /**
      * @return array
      */
     public static function getDefaultOptions()
@@ -140,6 +122,26 @@ abstract class BaseAurxy
                     '127.0.0.1:10085',
                 ],
             ],
+            'log' => [],
         ];
+    }
+
+    /**
+     * @return Logger
+     */
+    protected static function createLogger()
+    {
+        $log = new Logger('aurxy');
+        if (isset(static::$options['log']['debug'])) {
+            $log->pushHandler(new StreamHandler(static::$options['log']['debug'], Logger::DEBUG, false));
+        }
+        if (isset(static::$options['log']['access'])) {
+            $log->pushHandler(new StreamHandler(static::$options['log']['access'], Logger::INFO, false));
+        }
+        if (isset(static::$options['log']['error'])) {
+            $log->pushHandler(new StreamHandler(static::$options['log']['error'], Logger::WARNING, true));
+        }
+
+        return $log;
     }
 }

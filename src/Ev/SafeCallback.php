@@ -36,14 +36,15 @@ class SafeCallback
         try {
             call_user_func_array($this->callback, func_get_args());
         } catch (\Throwable $exception) {
-            echo sprintf("\n%s #%d \"%s\" in %s at at line %d\n",
+            $message = sprintf("%s #%d \"%s\" in %s at at line %d",
                 get_class($exception),
                 $exception->getCode(),
                 $exception->getMessage(),
                 $exception->getFile(),
                 $exception->getLine()
             );
-            echo $exception->getTraceAsString();
+            Aurxy::error($message);
+            echo $message . "\n" . $exception->getTraceAsString();
             die(1);
         }
     }
