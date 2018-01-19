@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * Aurxy - Http filter and proxy server.
+ * Aurxy - HTTP proxy server with powerful customizable filter rules.
  *
  * @author Panlatent <panlatent@gmail.com>
  */

@@ -2,6 +2,8 @@
 
 namespace Aurxy\Ev;
 
+use Aurxy;
+
 class SafeCallback
 {
     /**

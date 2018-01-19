@@ -8,9 +8,11 @@ use Aurxy\Ev\SafeCallback;
 use Aurxy\Event\TransactionEvent;
 use Aurxy\Filter\ResponseFixed;
 use Aurxy\Middleware\GuzzleBridgeMiddleware;
+use Ev;
 use Panlatent\Http\Client\LengthRequiredException;
 use Panlatent\Http\Message\Decoder;
 use Panlatent\Http\Message\Decoder\Stream;
+use Panlatent\Http\Message\Encoder;
 use Panlatent\Http\Transaction;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -52,7 +54,7 @@ class Connection
         $this->socket = $socket;
         socket_set_nonblock($socket);
         socket_getpeername($socket, $address, $port);
-        Aurxy::access("connection created from $address:$port");
+        Aurxy::debug("connection created from $address:$port");
     }
 
     /**
@@ -60,7 +62,7 @@ class Connection
      */
     public function handle()
     {
-        $this->socketReadEvent = new \EvIo($this->socket, \Ev::READ, new SafeCallback(function () {
+        $this->socketReadEvent = new \EvIo($this->socket, Ev::READ, new SafeCallback(function () {
             $this->onRead();
         }));
     }
@@ -168,24 +170,15 @@ class Connection
      */
     public function sendResponse(ResponseInterface $response)
     {
-        $buffer = 'HTTP/' . implode(' ', [
-                $response->getProtocolVersion(),
-                $response->getStatusCode(),
-                $response->getReasonPhrase(),
-            ]) . "\r\n";
-        foreach (array_keys($response->getHeaders()) as $key) {
-            $buffer .= $key . ': ' . $response->getHeaderLine($key) . "\r\n";
-        }
-
-        $buffer .= "\r\n";
-        $buffer .= $response->getBody()->getContents();
-
         $this->socketReadEvent->stop();
-        $this->socketWriteEvent = new \EvIo($this->socket, \Ev::WRITE, function () use (&$buffer) {
-            echo '=> Write => size ', strlen($buffer), " bytes\n";
+        $encoder = new Encoder();
+        $stream = $encoder->encode($response);
+        $buffer = $stream->getContents();
+        $this->socketWriteEvent = new \EvIo($this->socket, Ev::WRITE, function () use (&$buffer) {
+            Aurxy::debug('write => size ' . strlen($buffer) . " bytes");
             $length = @socket_write($this->socket, $buffer);
             if ($length === false) {
-                Aurxy::error('Socket error: ' . socket_last_error($this->socket));
+                Aurxy::error('socket error: ' . socket_last_error($this->socket));
 
                 return;
             }

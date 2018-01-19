@@ -2,6 +2,7 @@
 
 namespace Aurxy\Middleware;
 
+use Aurxy;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\TransferException;
