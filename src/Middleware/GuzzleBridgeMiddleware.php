@@ -42,7 +42,7 @@ class GuzzleBridgeMiddleware extends Middleware
          */
         $options = [
             'timeout'         => 30.0,
-            'connect_timeout' => 5.0,
+            'connect_timeout' => 10.0,
         ];
         try {
             $response = $this->send($request, $options);
