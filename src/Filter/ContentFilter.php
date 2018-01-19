@@ -30,18 +30,17 @@ abstract class ContentFilter extends ResponseFilter implements HandleInterface, 
         if (! $this->allowContentType()) {
             return $response;
         }
-
         $stream = $this->createStream();
-        $this->beforeProcess();
 
+        $this->beforeProcess();
         if ($this->replaceHandle) {
             call_user_func($this->replaceHandle);
         } else {
             $this->handle();
         }
+        $this->afterProcess();
 
         $stream->write($this->content);
-        $this->afterProcess();
 
         return $response->withBody($stream);
     }
