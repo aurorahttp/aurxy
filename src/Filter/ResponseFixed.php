@@ -1,8 +1,7 @@
 <?php
 
-namespace Panlatent\Aurxy;
+namespace Panlatent\Aurxy\Filter;
 
-use Panlatent\Aurxy\Filter\ResponseFilter;
 use Psr\Http\Message\ResponseInterface;
 
 class ResponseFixed extends ResponseFilter

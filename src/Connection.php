@@ -6,6 +6,7 @@ use Aurxy;
 use Panlatent\Aurxy\Adapter\GuzzleDecodeAdapter;
 use Panlatent\Aurxy\Ev\SafeCallback;
 use Panlatent\Aurxy\Event\TransactionEvent;
+use Panlatent\Aurxy\Filter\ResponseFixed;
 use Panlatent\Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Panlatent\Http\Client\LengthRequiredException;
 use Panlatent\Http\Message\Decoder;
