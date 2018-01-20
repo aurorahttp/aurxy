@@ -3,7 +3,7 @@
 namespace Aurxy\Event;
 
 use Aurxy\Event;
-use Panlatent\Http\Transaction;
+use Aurora\Http\Transaction\Transaction;
 
 class TransactionEvent extends Event
 {

@@ -2,8 +2,8 @@
 
 namespace Aurxy\Filter;
 
+use Aurora\Http\Message\Filter\RequestFilterInterface;
 use Aurxy\Filter;
-use Panlatent\Http\Server\RequestFilterInterface;
 
 abstract class RequestFilter extends Filter implements RequestFilterInterface
 {

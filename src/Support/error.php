@@ -1,6 +1,6 @@
 <?php
 
-use Panlatent\Http\Message\Response\StatusCode;
+use Aurora\Http\Message\Response\StatusCode;
 
 /** @var \Psr\Http\Message\RequestInterface $request */
 /** @var \Exception $exception */

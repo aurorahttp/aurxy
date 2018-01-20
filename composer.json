@@ -1,5 +1,5 @@
 {
-    "name": "panlatent/aurxy",
+    "name": "aurorahttp/aurxy",
     "description": "HTTP proxy server with powerful customizable filter rules",
     "type": "project",
     "require": {
@@ -14,11 +14,10 @@
         "symfony/options-resolver": "~3.4",
         "symfony/process": "~3.4",
         "monolog/monolog": "^1.23",
-        "panlatent/http-foundation": "~1.0",
-        "panlatent/http-exception": "~1.0",
-        "panlatent/http-message": "~1.0",
-        "panlatent/http-message-codec": "~1.0",
-        "panlatent/http-transaction": "~1.0"
+        "aurorahttp/http-foundation": "~1.0",
+        "aurorahttp/http-message": "~1.0",
+        "aurorahttp/http-message-codec": "~1.0",
+        "aurorahttp/http-transaction": "~1.0"
     },
     "require-dev": {
         "phing/phing": "^2.16",

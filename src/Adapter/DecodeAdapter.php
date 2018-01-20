@@ -2,12 +2,12 @@
 
 namespace Aurxy\Adapter;
 
-use Panlatent\Http\Message\Decoder;
-use Panlatent\Http\Message\Decoder\AdapterInterface;
-use Panlatent\Http\Message\Decoder\Stream;
-use Panlatent\Http\Message\HeaderStore;
-use Panlatent\Http\Message\ServerRequest;
-use Panlatent\Http\Message\Uri;
+use Aurora\Http\Message\Decoder;
+use Aurora\Http\Message\Decoder\AdapterInterface;
+use Aurora\Http\Message\Decoder\Stream;
+use Aurora\Http\Message\HeaderStore;
+use Aurora\Http\Message\ServerRequest;
+use Aurora\Http\Message\Uri;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;

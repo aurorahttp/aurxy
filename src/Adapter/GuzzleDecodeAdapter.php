@@ -3,8 +3,8 @@
 namespace Aurxy\Adapter;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Panlatent\Http\Message\Decoder;
-use Panlatent\Http\Message\Decoder\Stream;
+use Aurora\Http\Message\Decoder;
+use Aurora\Http\Message\Decoder\Stream;
 
 class GuzzleDecodeAdapter extends DecodeAdapter
 {

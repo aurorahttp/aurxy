@@ -9,11 +9,11 @@ use Aurxy\Event\TransactionEvent;
 use Aurxy\Filter\ResponseFixed;
 use Aurxy\Middleware\GuzzleBridgeMiddleware;
 use Ev;
-use Panlatent\Http\Client\LengthRequiredException;
-use Panlatent\Http\Message\Decoder;
-use Panlatent\Http\Message\Decoder\Stream;
-use Panlatent\Http\Message\Encoder;
-use Panlatent\Http\Transaction;
+use Aurora\Http\Client\LengthRequiredException;
+use Aurora\Http\Message\Decoder;
+use Aurora\Http\Message\Decoder\Stream;
+use Aurora\Http\Message\Encoder;
+use Aurora\Http\Transaction\Transaction;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 

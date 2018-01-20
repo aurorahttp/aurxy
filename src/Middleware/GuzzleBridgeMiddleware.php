@@ -8,7 +8,7 @@ use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\TransferException;
 use Interop\Http\Server\RequestHandlerInterface;
 use Aurxy\BadGatewayResponseFactory;
-use Panlatent\Http\Middleware;
+use Aurora\Http\Transaction\Middleware;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

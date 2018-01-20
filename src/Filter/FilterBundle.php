@@ -2,8 +2,8 @@
 
 namespace Aurxy\Filter;
 
+use Aurora\Http\Message\Filter\FilterInterface;
 use Aurxy\Bundle;
-use Panlatent\Http\Server\FilterInterface;
 use SplPriorityQueue;
 
 class FilterBundle extends Bundle
