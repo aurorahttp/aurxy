@@ -1,8 +1,6 @@
 <p align="center"><img src="https://raw.githubusercontent.com/panlatent/aurxy/master/docs/images/logo.png" 
 alt="aurxy" /></p>
 
-<p align="center">
-
 [![Build Status](https://travis-ci.org/aurorahttp/aurxy.svg)](https://travis-ci.org/aurorahttp/aurxy)
 [![Coverage Status](https://coveralls.io/repos/github/aurorahttp/aurxy/badge.svg?branch=master)](https://coveralls.io/github/aurorahttp/aurxy?branch=master)
 [![Latest Stable Version](https://poser.pugx.org/aurorahttp/aurxy/v/stable.svg)](https://packagist.org/packages/aurorahttp/aurxy)
@@ -11,10 +9,8 @@ alt="aurxy" /></p>
 [![License](https://poser.pugx.org/aurorahttp/aurxy/license.svg)](https://packagist.org/packages/aurorahttp/aurxy)
 [![Aurora Http](https://img.shields.io/badge/Powered_by-Aurora_Http-green.svg?style=flat)](https://aurorahttp.com/)
 
-</p>
+HTTP proxy server with powerful customizable filter rules.
 
-<p align="center">HTTP proxy server with powerful customizable filter rules.</p>
- 
 Installation
 ------------
 It's recommended that you use [Composer](https://getcomposer.org/) to install this library.
