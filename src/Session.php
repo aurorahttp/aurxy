@@ -2,6 +2,7 @@
 
 namespace Aurxy;
 
+use Aurora\Http\Connection\ClientConnection;
 use Aurxy;
 use Aurxy\Adapter\GuzzleDecodeAdapter;
 use Aurxy\Ev\SafeCallback;
@@ -14,29 +15,30 @@ use Aurora\Http\Message\Decoder;
 use Aurora\Http\Message\Decoder\Stream;
 use Aurora\Http\Message\Encoder;
 use Aurora\Http\Transaction\Transaction;
+use EvIo;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class Connection
+class Session
 {
     const EVENT_TRANSACTION_BEFORE = 'connection.transaction::before';
     const EVENT_TRANSACTION_HANDLE_BEFORE = 'connection.transaction_handle::before';
     const EVENT_TRANSACTION_HANDLE_AFTER = 'connection.transaction_handle::after';
 
     /**
-     * @var resource client socket resource.
+     * @var ClientConnection
      */
-    protected $socket;
+    protected $connection;
     /**
      * @var \EvTimer
      */
     protected $waitTimeoutEvent;
     /**
-     * @var \EvIo
+     * @var EvIo
      */
     protected $socketReadEvent;
     /**
-     * @var \EvIo
+     * @var EvIo
      */
     protected $socketWriteEvent;
     /**
@@ -47,24 +49,21 @@ class Connection
     /**
      * Connection constructor.
      *
-     * @param resource $socket
+     * @param ClientConnection $connection
      */
-    public function __construct($socket)
+    public function __construct(ClientConnection $connection)
     {
-        $this->socket = $socket;
-        socket_set_nonblock($socket);
-        socket_getpeername($socket, $address, $port);
-        Aurxy::debug("connection created from $address:$port");
-    }
+        $this->connection = $connection;
+        stream_set_blocking($connection->getSocket(), 0);
+        Aurxy::debug("connection created from {$connection->getAddress()}:{$connection->getPort()}");
 
-    /**
-     * Init status and register watchers.
-     */
-    public function handle()
-    {
-        $this->socketReadEvent = new \EvIo($this->socket, Ev::READ, new SafeCallback(function () {
+        $this->socketReadEvent = new EvIo($connection->getSocket(), Ev::READ, new SafeCallback(function () {
             $this->onRead();
         }));
+
+        $this->decodeStream = new Stream();
+        $this->decodeStream->getContext()->setHeaderReady([$this, 'afterRequestHeader']);
+        $this->decodeStream->getContext()->setBodyReady([$this, 'afterRequestBody']);
     }
 
     /**
@@ -75,10 +74,8 @@ class Connection
         $this->socketReadEvent and $this->socketReadEvent->stop();
         $this->socketWriteEvent and $this->socketWriteEvent->stop();
         $this->waitTimeoutEvent and $this->waitTimeoutEvent->stop();
-
-        socket_getpeername($this->socket, $address, $port);
-        socket_close($this->socket);
-        Aurxy::debug("connection close from $address:$port");
+        $this->connection->close();
+        Aurxy::debug("connection close from {$this->connection->getAddress()}:{$this->connection->getPort()}");
     }
 
     /**
@@ -86,13 +83,7 @@ class Connection
      */
     public function onRead()
     {
-        if ($this->decodeStream === null) {
-            $this->decodeStream = new Stream();
-            $this->decodeStream->getContext()->setHeaderReady([$this, 'afterRequestHeader']);
-            $this->decodeStream->getContext()->setBodyReady([$this, 'afterRequestBody']);
-        }
-
-        $part = socket_read($this->socket, 1024);
+        $part = $this->connection->read(1024);
         $length = 0;
         for (; $length != strlen($part);) {
             $length += $successLength = $this->decodeStream->write(substr($part, $length));
@@ -174,11 +165,11 @@ class Connection
         $encoder = new Encoder();
         $stream = $encoder->encode($response);
         $buffer = $stream->getContents();
-        $this->socketWriteEvent = new \EvIo($this->socket, Ev::WRITE, function () use (&$buffer) {
-            Aurxy::debug('write => size ' . strlen($buffer) . " bytes");
-            $length = @socket_write($this->socket, $buffer);
+        $this->socketWriteEvent = new EvIo($this->connection->getSocket(), Ev::WRITE, function () use (&$buffer) {
+            echo $length = $this->connection->write($buffer, strlen($buffer));
+            Aurxy::debug('write => size ' . $length . " bytes");
             if ($length === false) {
-                Aurxy::error('socket error: ' . socket_last_error($this->socket));
+                Aurxy::error('socket error');
 
                 return;
             }

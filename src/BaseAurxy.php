@@ -2,7 +2,6 @@
 
 use Aurxy\Ev\SafeCallback;
 use Aurxy\Server;
-use Aurxy\Server\SocketContainer;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -56,7 +55,6 @@ abstract class BaseAurxy
     public static function run()
     {
         static::$log = static::createLogger();
-
         static::$watchers[] = new EvSignal(SIGKILL, SafeCallback::wrapper(function () {
             static::shutdown();
         }));
@@ -67,11 +65,8 @@ abstract class BaseAurxy
             static::bootstrap();
             Aurxy::debug("Reload bootstrap");
         }));
-
         static::bootstrap();
-
-        $sockets = new SocketContainer((array)static::$options['server']['listen']);
-        static::$server = new Server($sockets);
+        static::$server = new Server((array)static::$options['server']['listen']);
         static::$server->start();
 
         Ev::run(Ev::FLAG_AUTO);

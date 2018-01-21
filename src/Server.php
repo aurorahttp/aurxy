@@ -2,44 +2,53 @@
 
 namespace Aurxy;
 
+use Aurora\Http\Connection\ClientConnection;
+use Aurora\Http\Connection\ServerConnection;
 use Aurxy;
+use Aurxy\Ev\SafeCallback;
 use Ev;
 use EvIo;
-use Aurxy\Ev\SafeCallback;
-use Aurxy\Server\SocketContainer;
+use EvWatcher;
 
 class Server
 {
     const EVENT_CLIENT_CONNECT_BEFORE = 'server.client_connect::before';
     const EVENT_CLIENT_CONNECT_AFTER = 'server.client_connect::after';
     /**
-     * @var array|SocketContainer
+     * @var ServerConnection[]
      */
-    protected $sockets;
+    protected $connections;
     /**
-     * @var array|EvIo[]
+     * @var Session[]
      */
-    protected $socketReadWatchers = [];
+    protected $sessions;
+    /**
+     * @var EvWatcher[]
+     */
+    protected $watchers = [];
 
     /**
      * Server constructor.
      *
-     * @param array|SocketContainer $sockets
+     * @param array $connections
      */
-    public function __construct($sockets)
+    public function __construct($connections = [])
     {
-        $this->sockets = $sockets;
+        foreach ($connections as $connection) {
+            list($address, $port) = explode(':', $connection);
+            $this->connections[] = new ServerConnection($address, $port);
+        }
     }
 
     public function start()
     {
-        foreach ($this->sockets as $socket) {
-            $this->socketReadWatchers[] = new EvIo(
-                $socket,
+        foreach ($this->connections as $connection) {
+            $this->watchers[] = new EvIo(
+                $connection->getSocket(),
                 Ev::READ,
                 SafeCallback::wrapper(
-                    function () use($socket) {
-                        $this->onSocketRead($socket);
+                    function () use ($connection) {
+                        $this->onClientConnect($connection);
                     }
                 )
             );
@@ -48,21 +57,20 @@ class Server
 
     public function stop()
     {
-        foreach ($this->socketReadWatchers as $watcher) {
+        foreach ($this->watchers as $watcher) {
             $watcher->stop();
         }
-        foreach ($this->sockets as $socket) {
-            socket_shutdown($socket);
-            socket_close($socket);
+        foreach ($this->connections as $connection) {
+            $connection->close();
         }
     }
 
-    public function onSocketRead($socket)
+    public function onClientConnect(ServerConnection $connection)
     {
-        $client = socket_accept($socket);
+        $client = $connection->accept();
         Aurxy::event(static::EVENT_CLIENT_CONNECT_BEFORE);
-        $connection = new Connection($client);
+        $connection = new ClientConnection($client);
         Aurxy::event(static::EVENT_CLIENT_CONNECT_AFTER);
-        $connection->handle();
+        $this->sessions[] = new Session($connection);
     }
 }
