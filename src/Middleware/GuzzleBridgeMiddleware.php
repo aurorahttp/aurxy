@@ -6,12 +6,12 @@ use Aurxy;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\TransferException;
-use Interop\Http\Server\RequestHandlerInterface;
 use Aurxy\BadGatewayResponseFactory;
 use Aurora\Http\Transaction\Middleware;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 class GuzzleBridgeMiddleware extends Middleware
 {

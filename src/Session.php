@@ -3,6 +3,7 @@
 namespace Aurxy;
 
 use Aurora\Http\Connection\ClientConnection;
+use Aurora\Http\Handler\ClosureHandler;
 use Aurxy;
 use Aurxy\Adapter\GuzzleDecodeAdapter;
 use Aurxy\Ev\SafeCallback;
@@ -144,12 +145,12 @@ class Session
     {
         Aurxy::event(static::EVENT_TRANSACTION_BEFORE);
         $transaction = new Transaction($request);
-        $transaction->getMiddlewares()->push(new GuzzleBridgeMiddleware());
-        $transaction->getFilters()->insert(new ResponseFixed(), 0);
+        $transaction->getMiddlewares()->insert(new GuzzleBridgeMiddleware());
+        $transaction->getFilters()->insert(new ResponseFixed());
         $transaction->setRequestHandler(new RequestHandler());
         $event = new TransactionEvent($transaction);
         Aurxy::event(static::EVENT_TRANSACTION_HANDLE_BEFORE, $event);
-        $response = $transaction->handle();
+        $response = $transaction->handle($request, ClosureHandler::create(function() {}));
         Aurxy::event(static::EVENT_TRANSACTION_HANDLE_AFTER, $event);
         $this->sendResponse($response);
     }

@@ -3,9 +3,9 @@
 namespace Aurxy;
 
 use GuzzleHttp\Psr7\Response;
-use Interop\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 class RequestHandler implements RequestHandlerInterface
 {

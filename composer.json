@@ -14,12 +14,11 @@
         "symfony/options-resolver": "~3.4",
         "symfony/process": "~3.4",
         "monolog/monolog": "^1.23",
-        "aurora/http-foundation": "~1.0",
-        "aurora/http-message": "~1.0",
-        "aurora/http-message-codec": "~1.0",
-        "aurora/http-handle": "~1.0",
-        "aurora/http-connection": "~1.0",
-        "aurora/http-transaction": "~1.0"
+        "aurora/http-foundation": "~0.1",
+        "aurora/http-message": "~0.1",
+        "aurora/http-message-codec": "~0.1",
+        "aurora/http-connection": "~0.1",
+        "aurora/http-transaction": "~0.1"
     },
     "require-dev": {
         "phing/phing": "^2.16",
@@ -33,7 +32,6 @@
         }
     ],
     "minimum-stability": "dev",
-    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Aurxy\\": "src/"
@@ -41,7 +39,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.0.x-dev"
+            "dev-master": "0.1.x-dev"
         }
     }
 }

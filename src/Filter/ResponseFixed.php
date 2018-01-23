@@ -6,7 +6,7 @@ use Psr\Http\Message\ResponseInterface;
 
 class ResponseFixed extends ResponseFilter
 {
-    public function process(ResponseInterface $response): ResponseInterface
+    public function processResponse(ResponseInterface $response): ResponseInterface
     {
         if ($response->hasHeader('Transfer-Encoding')) {
             /*
